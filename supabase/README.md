@@ -136,3 +136,18 @@ PostgreSQL 16.4 محليا وخرجت
 3. شاشة دخول بدعوة: بريد/كلمة مرور + `redeem_invitation`.
 4. الدردشة على `messages` مع Realtime، والرفع الصوتي على `voice-notes`.
 5. المكالمات: LiveKit (SFU) لاحقا؛ الجلسة والطابور جاهزان الآن لربطها.
+
+## المكالمات (LiveKit)
+
+دالة `functions/livekit-token` تُصدر توكن غرفة للمستخدمة **المسجّلة والعضوة فقط**،
+والأسرار تبقى على الخادم:
+
+```bash
+supabase secrets set LIVEKIT_URL=wss://xxx.livekit.cloud \
+  LIVEKIT_API_KEY=... LIVEKIT_API_SECRET=... LIVEKIT_ROOM=maqraa-main
+supabase functions deploy livekit-token
+```
+
+الاستدعاء من التطبيق: `POST /functions/v1/livekit-token` برأس
+`Authorization: Bearer <access_token>` فيعيد `{ token, url, room, role }`.
+المعلمة تُصدر لها `roomAdmin` فتكتم الآخرين، والطالبة `roomJoin` فقط.
