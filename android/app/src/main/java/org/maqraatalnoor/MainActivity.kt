@@ -1,8 +1,13 @@
 package org.maqraatalnoor
 
+import android.graphics.Color as AndroidColor
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.CompositionLocalProvider
@@ -33,7 +38,11 @@ import org.maqraatalnoor.ui.screens.PrivateSessionScreen
 import org.maqraatalnoor.ui.screens.SettingsScreen
 import org.maqraatalnoor.ui.screens.SplashScreen
 import org.maqraatalnoor.ui.screens.TeacherControlScreen
+import org.maqraatalnoor.ui.theme.DeepGreen
+import org.maqraatalnoor.ui.theme.DeepGreenDark
+import org.maqraatalnoor.ui.theme.MaqraatalNoorBackground
 import org.maqraatalnoor.ui.theme.MaqraatalNoorTheme
+import org.maqraatalnoor.ui.theme.Paper
 import org.maqraatalnoor.ui.theme.PlexFamily
 import org.maqraatalnoor.ui.viewmodels.SettingsViewModel
 
@@ -47,6 +56,16 @@ import org.maqraatalnoor.ui.viewmodels.SettingsViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Edge-to-edge: the app paints under the status and navigation bars.
+        // Every header is deep green, so the status bar keeps light icons and
+        // a transparent scrim; the bottom nav is paper, so it keeps dark icons.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(
+                AndroidColor.TRANSPARENT,
+                AndroidColor.TRANSPARENT,
+            ),
+        )
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
             val uiFontFamily by settingsViewModel.uiFontFamily.collectAsState()
@@ -59,10 +78,24 @@ class MainActivity : ComponentActivity() {
                     val currentRoute = backStackEntry?.destination?.route
                     val showBottomNav = currentRoute == Routes.HOME ||
                         currentRoute == Routes.CLASSES ||
-                        currentRoute == Routes.MUSHAF ||
                         currentRoute == Routes.SETTINGS
 
+                    // Full-bleed background per screen, painted behind the
+                    // system-bar insets so no empty band shows top or bottom.
+                    val screenBackground = when (currentRoute) {
+                        Routes.SPLASH -> DeepGreen
+                        Routes.LIVE -> DeepGreenDark
+                        Routes.MUSHAF -> Paper
+                        Routes.TEACHER, Routes.PRIVATE -> MaqraatalNoorBackground
+                        else -> MaqraatalNoorBackground
+                    }
+
                     Scaffold(
+                        containerColor = screenBackground,
+                        // Top insets are handled by each screen header (drawn
+                        // edge-to-edge); only the bottom system bar is padded
+                        // here, and the bottom bar already covers it when shown.
+                        contentWindowInsets = WindowInsets.navigationBars,
                         bottomBar = {
                             if (showBottomNav) {
                                 MaqraatalNoorBottomNav(

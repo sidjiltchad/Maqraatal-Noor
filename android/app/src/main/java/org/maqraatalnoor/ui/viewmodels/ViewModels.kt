@@ -23,6 +23,7 @@ import org.maqraatalnoor.data.ChatMessage
 import org.maqraatalnoor.data.DemoRepository
 import org.maqraatalnoor.data.Evaluation
 import org.maqraatalnoor.data.MushafRepository
+import org.maqraatalnoor.data.MushafSource
 import org.maqraatalnoor.data.SettingsStore
 import org.maqraatalnoor.data.Student
 import org.maqraatalnoor.domain.AttendanceLogic
@@ -94,50 +95,34 @@ class LiveHalqaViewModel : ViewModel() {
     fun setLocked(locked: Boolean) = session.setLocked(locked)
 }
 
-/** Mushaf reader: one sample page, highlight, bookmark saved locally. */
+/** Mushaf reader: two bundled mushafs (reading / tajweed), page images. */
 class MushafViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val settings = SettingsStore(application)
+    private val repository = MushafRepository(application.assets)
 
-    private val _page = MutableStateFlow(1)
+    val sources: List<MushafSource> = repository.sources()
+
+    private val _source = MutableStateFlow(
+        sources.firstOrNull() ?: MushafSource("none", "مصحف", "", 1, emptyList()),
+    )
+    val source = _source.asStateFlow()
+
+    private val _page = MutableStateFlow(_source.value.surahs.firstOrNull()?.page ?: 1)
     val page = _page.asStateFlow()
 
-    private val _highlightedAyah = MutableStateFlow(3)
-    val highlightedAyah = _highlightedAyah.asStateFlow()
+    fun pagePath(number: Int): String = repository.pagePath(_source.value, number)
 
-    private val _tajweedColours = MutableStateFlow(false)
-    val tajweedColours = _tajweedColours.asStateFlow()
-
-    val totalPages: Int = MushafRepository.pageCount
-    val bookmarkAyah: StateFlow<Int> = settings.bookmarkAyah.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5_000), 0,
-    )
-
-    fun currentPage() = MushafRepository.page(_page.value) ?: MushafRepository.firstPage()
-
-    fun nextPage() {
-        _page.update { MushafLogic.clampPage(it + 1, totalPages) }
-    }
-
-    fun previousPage() {
-        _page.update { MushafLogic.clampPage(it - 1, totalPages) }
-    }
-
-    fun selectAyah(number: Int) {
-        _highlightedAyah.value = number
-    }
-
-    fun toggleTajweedColours() {
-        _tajweedColours.update { !it }
-    }
-
-    fun saveBookmark() {
-        viewModelScope.launch {
-            settings.saveBookmark(_page.value, _highlightedAyah.value)
+    fun selectSource(id: String) {
+        sources.firstOrNull { it.id == id }?.let { chosen ->
+            _source.value = chosen
+            _page.value = chosen.surahs.firstOrNull()?.page ?: 1
         }
     }
-}
 
+    fun goToPage(number: Int) {
+        _page.value = MushafLogic.clampPage(number, _source.value.pageCount)
+    }
+}
 /** Teacher control: attendance, turn-giving, quick evaluation. */
 class TeacherViewModel : ViewModel() {
 

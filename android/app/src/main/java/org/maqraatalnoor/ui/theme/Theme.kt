@@ -10,15 +10,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 private fun typographyFor(family: FontFamily): Typography = Typography(
-    headlineLarge = TextStyle(family, FontWeight.Bold, 26.sp),
-    headlineMedium = TextStyle(family, FontWeight.Bold, 22.sp),
-    titleLarge = TextStyle(family, FontWeight.Bold, 19.sp),
-    titleMedium = TextStyle(family, FontWeight.Bold, 17.sp),
-    bodyLarge = TextStyle(family, FontWeight.Normal, 16.sp),
-    bodyMedium = TextStyle(family, FontWeight.Normal, 15.sp),
-    labelLarge = TextStyle(family, FontWeight.Bold, 15.sp),
-    labelMedium = TextStyle(family, FontWeight.Medium, 14.sp),
-    bodySmall = TextStyle(family, FontWeight.Normal, 13.sp),
+    headlineLarge = TextStyle(fontFamily = family, fontWeight = FontWeight.Bold, fontSize = 26.sp),
+    headlineMedium = TextStyle(fontFamily = family, fontWeight = FontWeight.Bold, fontSize = 22.sp),
+    titleLarge = TextStyle(fontFamily = family, fontWeight = FontWeight.Bold, fontSize = 19.sp),
+    titleMedium = TextStyle(fontFamily = family, fontWeight = FontWeight.Bold, fontSize = 17.sp),
+    bodyLarge = TextStyle(fontFamily = family, fontWeight = FontWeight.Normal, fontSize = 16.sp),
+    bodyMedium = TextStyle(fontFamily = family, fontWeight = FontWeight.Normal, fontSize = 15.sp),
+    labelLarge = TextStyle(fontFamily = family, fontWeight = FontWeight.Bold, fontSize = 15.sp),
+    labelMedium = TextStyle(fontFamily = family, fontWeight = FontWeight.Medium, fontSize = 14.sp),
+    bodySmall = TextStyle(fontFamily = family, fontWeight = FontWeight.Normal, fontSize = 13.sp),
 )
 
 private val MaqraatalNoorColors = lightColorScheme(

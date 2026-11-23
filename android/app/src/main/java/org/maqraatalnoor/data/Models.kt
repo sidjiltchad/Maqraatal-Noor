@@ -99,11 +99,19 @@ data class ChatMessage(
     val durationSeconds: Int = 0,
 )
 
-/** One Mushaf page. The sample build ships Al-Fatiha only (see MushafRepository). */
-data class Ayah(val number: Int, val text: String)
+/** One surah row in a mushaf's index. */
+data class MushafSurah(val index: Int, val name: String, val page: Int)
 
-data class MushafPage(
-    val number: Int,
-    val surah: String,
-    val ayahs: List<Ayah>,
+/** A hizb or juz mark: its number and the page it starts on. */
+data class MushafMark(val number: Int, val page: Int)
+
+/** One bundled mushaf: assets folder, page count, surah and hizb indexes. */
+data class MushafSource(
+    val id: String,
+    val title: String,
+    val assetDir: String,
+    val pageCount: Int,
+    val surahs: List<MushafSurah>,
+    val hizbs: List<MushafMark> = emptyList(),
+    val juzs: List<MushafMark> = emptyList(),
 )

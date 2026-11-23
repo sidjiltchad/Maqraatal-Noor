@@ -14,13 +14,20 @@ import org.maqraatalnoor.R
 val PlexFamily = FontFamily(
     Font(R.font.ibm_plex_sans_arabic_regular, FontWeight.Normal),
     Font(R.font.ibm_plex_sans_arabic_medium, FontWeight.Medium),
-    Font(R.font.ibm_plex_sans_arabic_semi_bold, FontWeight.SemiBold),
+    Font(R.font.ibm_plex_sans_arabic_semibold, FontWeight.SemiBold),
     Font(R.font.ibm_plex_sans_arabic_bold, FontWeight.Bold),
 )
 
 /**
- * Quran text: bundled Noto Naskh Arabic (OFL). Never the interface font
- * and never Thamaniya — the Uthmani page keeps its Naskh drawing.
+ * Quran text: Amiri Quran (SIL OFL) for the Madani page layout, with the
+ * bundled Noto Naskh as the second face. Never the interface font and never
+ * Thamaniya — the Uthmani page keeps its Naskh drawing.
+ */
+/**
+ * Quran text: bundled Noto Naskh Arabic (OFL) for the live-strip verse and any
+ * inline Quran text. The mushaf screens themselves render the printed pages
+ * as images, so no Quran face is shipped for them. Never the interface font
+ * and never Thamaniya.
  */
 val QuranFamily = FontFamily(
     Font(R.font.noto_naskh_arabic_regular, FontWeight.Normal),

@@ -1,6 +1,7 @@
 package org.maqraatalnoor.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,10 +46,13 @@ import org.maqraatalnoor.ui.components.InitialAvatar
 import org.maqraatalnoor.ui.components.MaqraatalNoorCard
 import org.maqraatalnoor.ui.components.MaqraatalNoorTopBar
 import org.maqraatalnoor.ui.components.SectionTitle
+import org.maqraatalnoor.ui.theme.CardLine
 import org.maqraatalnoor.ui.theme.DeepGreen
 import org.maqraatalnoor.ui.theme.Gold
 import org.maqraatalnoor.ui.theme.GoldDark
 import org.maqraatalnoor.ui.theme.HighlightGold
+import org.maqraatalnoor.ui.theme.LiveRed
+import org.maqraatalnoor.ui.theme.MaqraatalNoorGreen
 import org.maqraatalnoor.ui.theme.Muted
 import org.maqraatalnoor.ui.theme.QuranFamily
 import org.maqraatalnoor.ui.viewmodels.PrivateSessionViewModel
@@ -79,19 +83,22 @@ fun TeacherControlScreen(
         MaqraatalNoorTopBar("تحكم المعلمة", "حلقة التجويد • مباشر • 6 طالبات")
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { viewModel.clearSavedMessage() }, modifier = Modifier.weight(1f)) {
-                    Text("كتم الجميع", color = DeepGreen)
-                }
-                OutlinedButton(onClick = { locked = !locked }, modifier = Modifier.weight(1f)) {
-                    Text(if (locked) "فتح الدخول" else "قفل الدخول", color = DeepGreen)
-                }
-                Button(
-                    onClick = onBack,
+                TeacherPill(
+                    text = "كتم الجميع",
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = DeepGreen),
-                ) {
-                    Text("إنهاء الحلقة")
-                }
+                    container = MaqraatalNoorGreen,
+                ) { viewModel.clearSavedMessage() }
+                TeacherPill(
+                    text = if (locked) "فتح الدخول" else "قفل الدخول",
+                    modifier = Modifier.weight(1f),
+                    container = MaqraatalNoorGreen,
+                ) { locked = !locked }
+                TeacherPill(
+                    text = "إنهاء الحلقة",
+                    modifier = Modifier.weight(1f),
+                    container = LiveRed,
+                    onClick = onBack,
+                )
             }
             if (locked) {
                 Spacer(Modifier.height(8.dp))
@@ -99,65 +106,79 @@ fun TeacherControlScreen(
             }
             Spacer(Modifier.height(16.dp))
             SectionTitle("الحضور والغياب")
-            Spacer(Modifier.height(8.dp))
-            MaqraatalNoorCard {
-                Text(
-                    "حاضرات ${summary.present} من ${summary.total} • غائبات ${summary.absent}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(Modifier.height(12.dp))
-                students.forEach { student ->
-                    val present = records.firstOrNull { it.studentId == student.id }?.present ?: true
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        InitialAvatar(student.initial, size = 40, active = true)
-                        Spacer(Modifier.width(10.dp))
-                        Text(student.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                        Text(
-                            if (present) "حاضرة" else "غائبة",
-                            color = if (present) DeepGreen else GoldDark,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.clickable { viewModel.toggleAttendance(student.id) },
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Button(
-                            onClick = { viewModel.giveTurn(student.id) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = DeepGreen),
-                        ) {
-                            Text("أعطها الدور")
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "حاضرات ${summary.present} من ${summary.total} • غائبات ${summary.absent}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Muted,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(10.dp))
+            students.forEach { student ->
+                val present = records.firstOrNull { it.studentId == student.id }?.present ?: true
+                val turn = turns.firstOrNull { it.student.id == student.id }
+                val state = when {
+                    currentReader?.student?.id == student.id -> "تقرأ الآن"
+                    turn?.handRaised == true -> "رافعة يدها"
+                    !present -> "لم تنضم بعد"
+                    else -> "تستمع"
                 }
+                AttendanceRow(
+                    initial = student.initial,
+                    name = student.name,
+                    state = state,
+                    present = present,
+                    onToggle = { viewModel.toggleAttendance(student.id) },
+                    onGiveTurn = { viewModel.giveTurn(student.id) },
+                )
+                Spacer(Modifier.height(8.dp))
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
             SectionTitle("التقييم السريع")
             Spacer(Modifier.height(8.dp))
             MaqraatalNoorCard {
                 val readerName = currentReader?.student?.name ?: "—"
                 val evaluation = currentReader?.let { evaluations[it.student.id] }
-                Text("الطالبة: $readerName", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(8.dp))
                 Text(
-                    "التجويد: ${evaluation?.tajweedScore ?: 4}/5 • الحفظ: ${evaluation?.hifzScore ?: 3}/5",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                if (!evaluation?.note.isNullOrEmpty()) {
-                    Text(evaluation!!.note, style = MaterialTheme.typography.bodyMedium, color = Muted)
-                }
-                Spacer(Modifier.height(12.dp))
-                GoldButton(
-                    text = "حفظ التقييم وإرساله للطالبة",
-                    onClick = {
-                        currentReader?.let { reader ->
-                            viewModel.saveEvaluation(
-                                reader.student.id,
-                                evaluation ?: org.maqraatalnoor.data.Evaluation(reader.student.id, 4, 3, true),
-                            )
-                        }
-                    },
+                    "تقييم سريع لـ $readerName",
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    EvalChip("الحضور ✓", Modifier.weight(1f))
+                    EvalChip("الحفظ ${evaluation?.hifzScore ?: 3}/5", Modifier.weight(1f))
+                    EvalChip("التجويد ${evaluation?.tajweedScore ?: 4}/5", Modifier.weight(1f))
+                }
+                if (!evaluation?.note.isNullOrEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(evaluation.note, style = MaterialTheme.typography.bodyMedium, color = Muted)
+                }
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(25.dp))
+                        .background(DeepGreen)
+                        .clickable {
+                            currentReader?.let { reader ->
+                                viewModel.saveEvaluation(
+                                    reader.student.id,
+                                    evaluation ?: org.maqraatalnoor.data.Evaluation(reader.student.id, 4, 3, true),
+                                )
+                            }
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "حفظ التقييم وإرساله للطالبة",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
             }
             Spacer(Modifier.height(12.dp))
             if (savedMessage != null) {
@@ -311,5 +332,108 @@ fun PrivateSessionScreen(
             }
         }
         Spacer(Modifier.height(16.dp))
+    }
+}
+
+/** Deep pill used by the teacher's top controls (design screen 6). */
+@Composable
+private fun TeacherPill(
+    text: String,
+    modifier: Modifier = Modifier,
+    container: Color,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .height(46.dp)
+            .clip(RoundedCornerShape(23.dp))
+            .background(container)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            color = Color.White,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** One attendance card: avatar, name, live state, and the give-turn pill. */
+@Composable
+private fun AttendanceRow(
+    initial: String,
+    name: String,
+    state: String,
+    present: Boolean,
+    onToggle: () -> Unit,
+    onGiveTurn: () -> Unit,
+) {
+    MaqraatalNoorCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            InitialAvatar(initial, size = 44, active = present)
+            Spacer(Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                Text(
+                    state,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (present) Muted else GoldDark,
+                    maxLines = 1,
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                if (present) "حاضرة" else "غائبة",
+                color = if (present) DeepGreen else LiveRed,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onToggle)
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Box(
+                modifier = Modifier
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Gold)
+                    .clickable(onClick = onGiveTurn)
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "أعطها الدور",
+                    color = DeepGreen,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+/** Outlined read-only chip in the quick-evaluation card. */
+@Composable
+private fun EvalChip(text: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .height(44.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .border(1.dp, CardLine, RoundedCornerShape(22.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            color = DeepGreen,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+        )
     }
 }

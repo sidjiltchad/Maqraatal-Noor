@@ -10,3 +10,13 @@ android/app/build/
 android/build/
 *.apk
 *.aab
+
+# Working files and verification screenshots
+.work/
+docs/shots/
+*.webp.tmp
+
+
+# IDE
+.idea/
+

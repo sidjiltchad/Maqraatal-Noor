@@ -2,21 +2,28 @@ package org.maqraatalnoor.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -24,10 +31,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.maqraatalnoor.R
@@ -57,7 +67,8 @@ fun SplashScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(DeepGreen)
-            .padding(horizontal = 24.dp, vertical = 32.dp),
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 24.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(24.dp))
@@ -203,8 +214,9 @@ private fun StatCard(number: String, label: String, modifier: Modifier = Modifie
         )
         Text(
             label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = Muted,
+            maxLines = 1,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
         )
@@ -246,7 +258,7 @@ fun ClassesScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = GoldDark,
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.End,
+                textAlign = TextAlign.Start,
             )
             Spacer(Modifier.height(20.dp))
             viewModel.classes.forEach { classGroup ->
@@ -282,8 +294,36 @@ fun ClassesScreen(
 @Composable
 private fun LevelStepper(current: Level) {
     val levels = Level.entries.sortedBy { it.order }
+    val lineColor = Color(0xFFE4D9BC)
+    val currentIndex = levels.indexOf(current)
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .drawBehind {
+                // Circles are 40.dp tall, so their centre sits at 20.dp.
+                val y = 20.dp.toPx()
+                val step = size.width / levels.size
+                val firstCenter = if (layoutDirection == LayoutDirection.Rtl) {
+                    size.width - step / 2f
+                } else {
+                    step / 2f
+                }
+                val direction = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f
+                val lastCenter = firstCenter + direction * step * (levels.size - 1)
+                drawLine(
+                    color = lineColor,
+                    start = Offset(firstCenter, y),
+                    end = Offset(lastCenter, y),
+                    strokeWidth = 3.dp.toPx(),
+                )
+                val reachedCenter = firstCenter + direction * step * currentIndex
+                drawLine(
+                    color = Gold,
+                    start = Offset(firstCenter, y),
+                    end = Offset(reachedCenter, y),
+                    strokeWidth = 3.dp.toPx(),
+                )
+            },
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.Top,
     ) {
@@ -292,28 +332,41 @@ private fun LevelStepper(current: Level) {
         levels.forEach { level ->
             val done = level.order < current.order
             val isCurrent = level == current
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
                         .background(if (done || isCurrent) Gold else Color.White)
-                        .padding(2.dp),
+                        .border(1.dp, if (done || isCurrent) Gold else lineColor, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        if (done) "✓" else (level.order + 1).toString(),
-                        color = if (done || isCurrent) DeepGreen else Muted,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    if (done) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = DeepGreen,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    } else {
+                        Text(
+                            (level.order + 1).toString(),
+                            color = if (isCurrent) DeepGreen else Muted,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(
                     level.arabicName,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (isCurrent) GoldDark else Muted,
                     fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 1,
                 )
             }
         }

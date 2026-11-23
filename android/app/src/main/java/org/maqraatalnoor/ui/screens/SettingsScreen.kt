@@ -4,6 +4,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.maqraatalnoor.fonts.FontLoader
@@ -168,24 +171,55 @@ private fun FontRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(if (selected) org.maqraatalnoor.ui.theme.Sage else org.maqraatalnoor.ui.theme.Paper)
             .clickable { onSelect() }
-            .padding(vertical = 10.dp, horizontal = 12.dp),
+            .padding(vertical = 12.dp, horizontal = 12.dp),
     ) {
+        // Radio-style marker: gold ring with an inner dot when selected.
         Box(
             modifier = Modifier
                 .size(20.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(if (selected) DeepGreen else org.maqraatalnoor.ui.theme.CardLine),
-        )
-        Spacer(Modifier.size(10.dp))
-        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        if (selected) {
-            Text("مُطبَّق", color = GoldDark, style = MaterialTheme.typography.labelLarge)
-        } else if (onDelete != null) {
-            Text("حذف", color = Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.clickable { onDelete() })
+                .clip(CircleShape)
+                .border(
+                    width = 2.dp,
+                    color = if (selected) GoldDark else org.maqraatalnoor.ui.theme.CardLine,
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(GoldDark),
+                )
+            }
+        }
+        Spacer(Modifier.size(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                name,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (selected) {
+                Text("مُطبَّق على الواجهة", color = GoldDark, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        if (onDelete != null) {
+            Text(
+                "حذف",
+                color = Muted,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onDelete() }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            )
         }
     }
-    Spacer(Modifier.height(6.dp))
+    Spacer(Modifier.height(8.dp))
 }
