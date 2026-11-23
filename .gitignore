@@ -20,3 +20,7 @@ docs/shots/
 # IDE
 .idea/
 
+
+# Supabase keys (local only)
+android/supabase.properties
+
