@@ -22,6 +22,11 @@ object SupabaseApi {
         .build()
 
     val baseUrl: String get() = BuildConfig.SUPABASE_URL.trimEnd('/')
+
+    /** wss://<ref>.supabase.co/realtime/v1/websocket */
+    val realtimeUrl: String get() = baseUrl.replace("https://", "wss://") + "/realtime/v1/websocket"
+
+    val anonKeyPublic: String get() = BuildConfig.SUPABASE_ANON_KEY
     private val anonKey: String get() = BuildConfig.SUPABASE_ANON_KEY
 
     data class AuthSession(

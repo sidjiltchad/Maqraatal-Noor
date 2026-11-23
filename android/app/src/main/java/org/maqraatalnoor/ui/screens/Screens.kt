@@ -28,6 +28,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +61,7 @@ import org.maqraatalnoor.ui.theme.GoldDark
 import org.maqraatalnoor.ui.theme.GoldLight
 import org.maqraatalnoor.ui.theme.Muted
 import org.maqraatalnoor.ui.viewmodels.ClassesViewModel
+import org.maqraatalnoor.ui.viewmodels.HomeRemoteViewModel
 import org.maqraatalnoor.ui.viewmodels.HomeViewModel
 import androidx.compose.foundation.BorderStroke
 
@@ -132,7 +135,9 @@ fun HomeScreen(
     onNavigatePrivate: (String) -> Unit,
     onNavigateTeacher: (String) -> Unit,
     viewModel: HomeViewModel = viewModel(),
+    homeRemote: HomeRemoteViewModel = viewModel(),
 ) {
+    val live by homeRemote.state.collectAsState()
     val halqa = viewModel.halqa
     val weekly = viewModel.weekly
     Column(
@@ -175,9 +180,9 @@ fun HomeScreen(
             SectionTitle("تقدمك هذا الأسبوع")
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatCard(number = weekly.halqas.toString(), label = "حلقات", modifier = Modifier.weight(1f))
-                StatCard(number = weekly.pagesRead.toString(), label = "صفحة قراءة", modifier = Modifier.weight(1f))
-                StatCard(number = "${weekly.tajweedScore}/5", label = "تقييم التجويد", modifier = Modifier.weight(1f))
+                StatCard(number = live.sessionsThisWeek.toString(), label = "حلقات الأسبوع", modifier = Modifier.weight(1f))
+                StatCard(number = live.myAttendance.toString(), label = "حضور", modifier = Modifier.weight(1f))
+                StatCard(number = live.averageTajweed, label = "تقييم التجويد", modifier = Modifier.weight(1f))
             }
             Spacer(Modifier.height(20.dp))
             SectionTitle("حلقتي")

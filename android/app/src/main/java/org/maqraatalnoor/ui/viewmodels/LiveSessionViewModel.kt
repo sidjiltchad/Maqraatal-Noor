@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.maqraatalnoor.data.remote.RealtimeClient
 import org.maqraatalnoor.data.remote.RemoteMember
 import org.maqraatalnoor.data.remote.RemoteSession
 import org.maqraatalnoor.data.remote.RemoteTurn
@@ -54,12 +55,23 @@ class LiveSessionViewModel : ViewModel() {
     val isStaff: Boolean get() = SessionHolder.isStaff
     val myId: String get() = SessionHolder.userId
 
+    private var realtime: RealtimeClient? = null
+
     fun start() {
         if (poller?.isActive == true) return
+        val token = SessionHolder.session?.accessToken
+        if (token != null) {
+            realtime = RealtimeClient(
+                accessToken = token,
+                tables = listOf("sessions", "recitation_turns", "session_attendance", "messages"),
+                onChange = { viewModelScope.launch { refresh() } },
+            ).also { it.connect() }
+        }
+        // شبكة أمان: تحديث كامل كل 20 ثانية إن انقطع الاشتراك اللحظي.
         poller = viewModelScope.launch {
             while (isActive) {
                 refresh()
-                delay(2_000)
+                delay(20_000)
             }
         }
     }
@@ -67,6 +79,8 @@ class LiveSessionViewModel : ViewModel() {
     fun stop() {
         poller?.cancel()
         poller = null
+        realtime?.close()
+        realtime = null
     }
 
     private suspend fun refresh() {
