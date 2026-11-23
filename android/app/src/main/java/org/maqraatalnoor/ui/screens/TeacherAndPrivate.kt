@@ -27,6 +27,7 @@ import androidx.compose.runtime.key
 import org.maqraatalnoor.ui.viewmodels.TeacherRemoteViewModel
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import org.maqraatalnoor.ui.viewmodels.PrivateChatViewModel
 import org.maqraatalnoor.ui.theme.Paper
@@ -206,7 +207,8 @@ fun PrivateSessionScreen(
     val state by viewModel.state.collectAsState()
     var draft by remember { mutableStateOf("") }
 
-    LaunchedEffect(studentId) { viewModel.load(studentId) }
+    LaunchedEffect(studentId) { viewModel.startPolling(studentId) }
+    DisposableEffect(studentId) { onDispose { viewModel.stopPolling() } }
 
     Column(modifier = Modifier.fillMaxSize().imePadding()) {
         MaqraatalNoorTopBar(

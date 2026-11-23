@@ -3,6 +3,9 @@ package org.maqraatalnoor.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -26,10 +29,28 @@ class PrivateChatViewModel : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()
 
-    fun load(studentId: String) {
+    private var poller: Job? = null
+
+    /** تحديث تلقائي كل 3 ثوانٍ ما دامت الشاشة مفتوحة. */
+    fun startPolling(studentId: String) {
+        if (poller?.isActive == true) return
+        poller = viewModelScope.launch {
+            while (isActive) {
+                load(studentId, silent = true)
+                delay(3_000)
+            }
+        }
+    }
+
+    fun stopPolling() {
+        poller?.cancel()
+        poller = null
+    }
+
+    fun load(studentId: String, silent: Boolean = false) {
         val remote = SessionHolder.remote ?: return
         viewModelScope.launch {
-            _state.value = _state.value.copy(loading = true, studentId = studentId, error = null)
+            if (!silent) _state.value = _state.value.copy(loading = true, studentId = studentId, error = null)
             try {
                 val name = withContext(Dispatchers.IO) {
                     runCatching {
