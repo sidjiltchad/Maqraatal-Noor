@@ -61,6 +61,9 @@ import org.maqraatalnoor.ui.viewmodels.SettingsViewModel
  */
 @Composable
 fun SettingsScreen(
+    userName: String,
+    roleLabel: String,
+    onSignOut: () -> Unit,
     viewModel: SettingsViewModel = viewModel(),
 ) {
     val context = LocalContext.current
@@ -86,7 +89,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("حسابي والإعدادات", "أمينة • الحلقة العامة • الدخول بدعوة فقط")
+        MaqraatalNoorTopBar("حسابي والإعدادات", "$userName • $roleLabel • الدخول بدعوة فقط")
         Column(modifier = Modifier.padding(16.dp)) {
             SectionTitle("الخط")
             Spacer(Modifier.height(8.dp))
@@ -152,7 +155,7 @@ fun SettingsScreen(
                 Text("المكالمات: حالة محاكاة محلية فقط في هذه النسخة؛ المكالمات الحقيقية تحتاج خادما وإشارات وحسابات.", style = MaterialTheme.typography.bodyMedium, color = Muted)
             }
             Spacer(Modifier.height(20.dp))
-            OutlinedButton(onClick = { /* Local build: no accounts server; sign-out only leaves the demo session. */ }, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
                 Text("تسجيل الخروج", color = DeepGreen)
             }
             Spacer(Modifier.height(16.dp))

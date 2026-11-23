@@ -121,6 +121,11 @@ fun SplashScreen(
 @Composable
 fun HomeScreen(
     role: Role,
+    displayName: String,
+    halqaName: String,
+    teachersLabel: String,
+    membersCount: Int,
+    isStaff: Boolean,
     onNavigateLive: (String) -> Unit,
     onNavigateClasses: () -> Unit,
     onNavigateMushaf: () -> Unit,
@@ -135,7 +140,7 @@ fun HomeScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("السلام عليكم، أمينة", "مستوى التجويد • فصل المتقدمات")
+        MaqraatalNoorTopBar("السلام عليكم، $displayName", halqaName)
         Column(modifier = Modifier.padding(16.dp)) {
             // Next halqa card (deep green, as in the design).
             Box(
@@ -177,14 +182,25 @@ fun HomeScreen(
             Spacer(Modifier.height(20.dp))
             SectionTitle("حلقتي")
             Spacer(Modifier.height(8.dp))
-            viewModel.classes.take(2).forEach { classGroup ->
-                ClassCard(
-                    classGroup = classGroup,
-                    actionLabel = "دخول الفصل",
-                    onAction = { onNavigateClasses() },
-                )
-                Spacer(Modifier.height(12.dp))
-            }
+            ClassCard(
+                classGroup = org.maqraatalnoor.data.ClassGroup(
+                    id = "h-main",
+                    name = halqaName,
+                    level = org.maqraatalnoor.data.Level.TAJWEED,
+                    teachers = listOf(
+                        org.maqraatalnoor.data.Teacher("t-main", teachersLabel, "الحلقة"),
+                    ),
+                    days = "الأحد والثلاثاء والخميس",
+                    time = "17:00",
+                    surah = "سورة الكهف",
+                    enrolled = membersCount,
+                    capacity = 30,
+                    progress = viewModel.student.levelProgress,
+                ),
+                actionLabel = "دخول الحلقة",
+                onAction = { onNavigateClasses() },
+            )
+            Spacer(Modifier.height(12.dp))
             if (role == Role.TEACHER) {
                 GoldButton(
                     text = "تحكم المعلمة — الحلقة العامة",
@@ -241,6 +257,10 @@ private fun QuickAction(label: String, modifier: Modifier = Modifier, onClick: (
 /** Screen 3 — classes and levels. */
 @Composable
 fun ClassesScreen(
+    halqaName: String,
+    teachersLabel: String,
+    membersCount: Int,
+    isStaff: Boolean,
     onOpenLive: (String) -> Unit,
     onOpenPrivate: (String) -> Unit,
     viewModel: ClassesViewModel = viewModel(),
@@ -251,7 +271,7 @@ fun ClassesScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("حلقتي ومستواي", "حلقة واحدة • عدة معلمات • مسارك من التأسيس إلى الإجازة")
+        MaqraatalNoorTopBar("حلقتي ومستواي", "$halqaName • $teachersLabel")
         Column(modifier = Modifier.padding(16.dp)) {
             SectionTitle("مستواك الحالي")
             Spacer(Modifier.height(12.dp))
@@ -265,26 +285,25 @@ fun ClassesScreen(
                 textAlign = TextAlign.Start,
             )
             Spacer(Modifier.height(20.dp))
-            viewModel.classes.forEach { classGroup ->
-                val locked = classGroup.locked
-                ClassCard(
-                    classGroup = classGroup,
-                    actionLabel = when {
-                        locked -> "مقفل"
-                        classGroup.isPrivate -> "موعدي"
-                        else -> "دخول الحلقة"
-                    },
-                    onAction = {
-                        when {
-                            locked -> Unit
-                            classGroup.isPrivate -> onOpenPrivate("s-mariam")
-                            else -> onOpenLive(classGroup.id)
-                        }
-                    },
-                    actionEnabled = !locked,
-                )
-                Spacer(Modifier.height(12.dp))
-            }
+            ClassCard(
+                classGroup = org.maqraatalnoor.data.ClassGroup(
+                    id = "h-main",
+                    name = halqaName,
+                    level = student.level,
+                    teachers = listOf(
+                        org.maqraatalnoor.data.Teacher("t-main", teachersLabel, "الحلقة"),
+                    ),
+                    days = "الأحد والثلاثاء والخميس",
+                    time = "17:00",
+                    surah = "سورة الكهف",
+                    enrolled = membersCount,
+                    capacity = 30,
+                    progress = student.levelProgress,
+                ),
+                actionLabel = "دخول الحلقة",
+                onAction = { onOpenLive("h-main") },
+            )
+            Spacer(Modifier.height(12.dp))
             Text(
                 "مستوى الإجازة يفتح بعد إتمام الحفظ والتجويد، بالسند مع المشرفة العامة.",
                 style = MaterialTheme.typography.bodyMedium,

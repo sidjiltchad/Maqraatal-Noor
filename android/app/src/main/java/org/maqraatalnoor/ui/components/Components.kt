@@ -194,7 +194,7 @@ fun ClassCard(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "المعلمات ${classGroup.teachersLabel} • ${classGroup.enrolled} طالبة",
+            "المعلمات ${classGroup.teachersLabel} • ${classGroup.enrolled} عضوة",
             style = MaterialTheme.typography.bodyMedium,
             color = Muted,
             textAlign = TextAlign.Start,
