@@ -22,62 +22,29 @@ object DemoRepository {
         Student("s-hiba", "هبة", Level.FOUNDATION, 0.20f),
     )
 
-    val classes: List<ClassGroup> = listOf(
-        ClassGroup(
-            id = "c-tajweed",
-            name = "فصل التجويد — المتقدمات",
-            level = Level.TAJWEED,
-            teacher = teacherSara,
-            days = "الأحد والثلاثاء",
-            time = "17:00",
-            surah = "سورة الكهف",
-            enrolled = 14,
-            capacity = 16,
-            progress = 0.68f,
-        ),
-        ClassGroup(
-            id = "c-hifz",
-            name = "فصل الحفظ — جزء عم",
-            level = Level.HIFZ,
-            teacher = teacherMariam,
-            days = "السبت",
-            time = "10:00",
-            surah = "سورة النبأ",
-            enrolled = 11,
-            capacity = 16,
-            progress = 0.42f,
-        ),
-        ClassGroup(
-            id = "c-private",
-            name = "إقراء فردي",
-            level = Level.TAJWEED,
-            teacher = teacherSara,
-            days = "الخميس",
-            time = "18:30",
-            surah = "سورة الكهف",
-            enrolled = 1,
-            capacity = 1,
-            progress = 0.80f,
-            isPrivate = true,
-        ),
-        ClassGroup(
-            id = "c-ijaza",
-            name = "مستوى الإجازة",
-            level = Level.IJAZA,
-            teacher = supervisor,
-            days = "بالسند",
-            time = "مع المشرفة العامة",
-            surah = "يفتح بعد إتمام الحفظ والتجويد",
-            enrolled = 0,
-            capacity = 8,
-            progress = 0f,
-            locked = true,
-        ),
+    /** All teachers of the single halqa (one circle, several teachers). */
+    val teachers: List<Teacher> = listOf(teacherSara, teacherMariam)
+
+    /** The one and only halqa. */
+    val halqa: ClassGroup = ClassGroup(
+        id = "h-main",
+        name = "مقرأة النور — الحلقة العامة",
+        level = Level.TAJWEED,
+        teachers = teachers,
+        days = "الأحد والثلاثاء والخميس",
+        time = "17:00",
+        surah = "سورة الكهف",
+        enrolled = students.size,
+        capacity = 30,
+        progress = 0.68f,
     )
+
+    /** Kept as a one-item list so existing screens read the same halqa. */
+    val classes: List<ClassGroup> = listOf(halqa)
 
     val nextHalqa = Halqa(
         id = "h-today",
-        classId = "c-tajweed",
+        classId = "h-main",
         title = "الحلقة القادمة",
         surah = "سورة الكهف",
         page = 293,
@@ -86,13 +53,11 @@ object DemoRepository {
         currentAyahText = "الْحَمْدُ لِلَّهِ الَّذِي أَنزَلَ عَلَىٰ عَبْدِهِ الْكِتَابَ",
     )
 
-    fun classById(id: String): ClassGroup? = classes.firstOrNull { it.id == id }
+    /** There is one halqa only, so any id resolves to it. */
+    fun classById(id: String): ClassGroup? = classes.firstOrNull { it.id == id } ?: halqa
 
-    fun studentsInClass(classId: String): List<Student> = when (classId) {
-        "c-tajweed" -> students
-        "c-hifz" -> students.take(4)
-        else -> students.take(1)
-    }
+    /** Everyone belongs to the same circle. */
+    fun studentsInClass(classId: String): List<Student> = students
 
     fun initialQueue(): List<RecitationTurn> {
         val first = students.take(4)

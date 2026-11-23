@@ -86,7 +86,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("حسابي والإعدادات", "أمينة • فصل التجويد • الدخول بدعوة فقط")
+        MaqraatalNoorTopBar("حسابي والإعدادات", "أمينة • الحلقة العامة • الدخول بدعوة فقط")
         Column(modifier = Modifier.padding(16.dp)) {
             SectionTitle("الخط")
             Spacer(Modifier.height(8.dp))

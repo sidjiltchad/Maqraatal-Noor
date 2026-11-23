@@ -36,11 +36,15 @@ data class Student(
     val initial: String get() = name.firstOrNull()?.toString() ?: "؟"
 }
 
+/**
+ * The halqa: ONE circle for the whole app, possibly shared by several
+ * teachers; every student belongs to that same circle.
+ */
 data class ClassGroup(
     val id: String,
     val name: String,
     val level: Level,
-    val teacher: Teacher,
+    val teachers: List<Teacher>,
     val days: String,
     val time: String,
     val surah: String,
@@ -49,7 +53,12 @@ data class ClassGroup(
     val progress: Float,
     val locked: Boolean = false,
     val isPrivate: Boolean = false,
-)
+) {
+    val teacher: Teacher get() = teachers.first()
+
+    /** "أم سارة، أم مريم" */
+    val teachersLabel: String get() = teachers.joinToString("، ") { it.name }
+}
 
 data class Halqa(
     val id: String,

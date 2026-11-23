@@ -80,7 +80,7 @@ fun TeacherControlScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("تحكم المعلمة", "حلقة التجويد • مباشر • 6 طالبات")
+        MaqraatalNoorTopBar("تحكم المعلمة", "الحلقة العامة • مباشر • ${students.size} طالبات")
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TeacherPill(

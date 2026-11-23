@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
                                 MaqraatalNoorBottomNav(
                                     items = listOf(
                                         BottomNavItem("الرئيسية", Routes.HOME),
-                                        BottomNavItem("فصولي", Routes.CLASSES),
+                                        BottomNavItem("حلقتي", Routes.CLASSES),
                                         BottomNavItem("المصحف", Routes.MUSHAF),
                                         BottomNavItem("حسابي", Routes.SETTINGS),
                                     ),

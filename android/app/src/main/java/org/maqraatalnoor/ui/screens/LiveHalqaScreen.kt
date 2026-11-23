@@ -116,7 +116,7 @@ fun LiveHalqaScreen(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                "حلقة التجويد • مباشر",
+                "الحلقة العامة • مباشر",
                 color = Color.White,
                 style = MaterialTheme.typography.titleMedium,
             )
@@ -135,7 +135,7 @@ fun LiveHalqaScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     InitialAvatar("س", size = 72, active = true)
                     Spacer(Modifier.height(8.dp))
-                    Text("المعلمة أم سارة", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                    Text(classGroup.teachersLabel, color = Color.White, style = MaterialTheme.typography.titleLarge)
                     Text(
                         "تقرأ: ${currentReader?.student?.name ?: "—"} • ${classGroup.surah}، آية 1",
                         color = Cream,

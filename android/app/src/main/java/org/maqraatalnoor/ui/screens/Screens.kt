@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -41,6 +42,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.maqraatalnoor.R
+import org.maqraatalnoor.data.DemoRepository
+import org.maqraatalnoor.ui.components.InitialAvatar
+import org.maqraatalnoor.ui.theme.CardLine
 import org.maqraatalnoor.data.Level
 import org.maqraatalnoor.data.Role
 import org.maqraatalnoor.ui.components.ClassCard
@@ -145,7 +149,7 @@ fun HomeScreen(
                     Text("الحلقة القادمة", color = GoldLight, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "فصل التجويد • مع المعلمة أم سارة",
+                        "الحلقة العامة • مع المعلمات أم سارة وأم مريم",
                         color = Color.White,
                         style = MaterialTheme.typography.bodyLarge,
                     )
@@ -171,7 +175,7 @@ fun HomeScreen(
                 StatCard(number = "${weekly.tajweedScore}/5", label = "تقييم التجويد", modifier = Modifier.weight(1f))
             }
             Spacer(Modifier.height(20.dp))
-            SectionTitle("فصولي")
+            SectionTitle("حلقتي")
             Spacer(Modifier.height(8.dp))
             viewModel.classes.take(2).forEach { classGroup ->
                 ClassCard(
@@ -183,7 +187,7 @@ fun HomeScreen(
             }
             if (role == Role.TEACHER) {
                 GoldButton(
-                    text = "تحكم المعلمة — فصل التجويد",
+                    text = "تحكم المعلمة — الحلقة العامة",
                     onClick = { onNavigateTeacher("c-tajweed") },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -247,7 +251,7 @@ fun ClassesScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("فصولي ومستوياتي", "مسارك من التأسيس إلى الإجازة")
+        MaqraatalNoorTopBar("حلقتي ومستواي", "حلقة واحدة • عدة معلمات • مسارك من التأسيس إلى الإجازة")
         Column(modifier = Modifier.padding(16.dp)) {
             SectionTitle("مستواك الحالي")
             Spacer(Modifier.height(12.dp))
@@ -268,7 +272,7 @@ fun ClassesScreen(
                     actionLabel = when {
                         locked -> "مقفل"
                         classGroup.isPrivate -> "موعدي"
-                        else -> "دخول الفصل"
+                        else -> "دخول الحلقة"
                     },
                     onAction = {
                         when {
@@ -286,6 +290,37 @@ fun ClassesScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = Muted,
             )
+            Spacer(Modifier.height(20.dp))
+            SectionTitle("معلمات الحلقة")
+            Spacer(Modifier.height(8.dp))
+            MaqraatalNoorCard {
+                DemoRepository.teachers.forEachIndexed { index, teacher ->
+                    if (index > 0) {
+                        androidx.compose.material3.HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            thickness = 0.6.dp,
+                            color = CardLine,
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        InitialAvatar(teacher.name.takeLast(1), size = 38, active = true)
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                teacher.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Text(
+                                teacher.specialty,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Muted,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.height(16.dp))
         }
     }
