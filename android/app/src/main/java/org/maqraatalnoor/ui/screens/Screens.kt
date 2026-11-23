@@ -1,0 +1,321 @@
+package org.maqraatalnoor.ui.screens
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.maqraatalnoor.R
+import org.maqraatalnoor.data.Level
+import org.maqraatalnoor.data.Role
+import org.maqraatalnoor.ui.components.ClassCard
+import org.maqraatalnoor.ui.components.GoldButton
+import org.maqraatalnoor.ui.components.MaqraatalNoorCard
+import org.maqraatalnoor.ui.components.MaqraatalNoorTopBar
+import org.maqraatalnoor.ui.components.SectionTitle
+import org.maqraatalnoor.ui.theme.Cream
+import org.maqraatalnoor.ui.theme.DeepGreen
+import org.maqraatalnoor.ui.theme.Gold
+import org.maqraatalnoor.ui.theme.GoldDark
+import org.maqraatalnoor.ui.theme.GoldLight
+import org.maqraatalnoor.ui.theme.Muted
+import org.maqraatalnoor.ui.viewmodels.ClassesViewModel
+import org.maqraatalnoor.ui.viewmodels.HomeViewModel
+import androidx.compose.foundation.BorderStroke
+
+/** Screen 1 — entry. The supplied official logo carries the name, so no duplicate title. */
+@Composable
+fun SplashScreen(
+    onEnterAs: (Role) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DeepGreen)
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(24.dp))
+        Image(
+            painter = painterResource(R.drawable.logo_maqraatalnoor),
+            contentDescription = "شعار مقرأة النور",
+            modifier = Modifier.size(260.dp),
+        )
+        Spacer(Modifier.height(16.dp))
+        Text("حلقات قرآنية للنساء", color = GoldLight, style = MaterialTheme.typography.titleMedium)
+        Text("إقراء • حفظ • تجويد", color = Cream, style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.height(24.dp))
+        Text(
+            "خيركم من تعلّم القرآن وعلّمه",
+            color = Cream,
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.weight(1f))
+        GoldButton(
+            text = "دخول الطالبة",
+            onClick = { onEnterAs(Role.STUDENT) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = { onEnterAs(Role.TEACHER) },
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(26.dp),
+            border = BorderStroke(1.dp, Gold),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldLight),
+        ) {
+            Text("دخول المعلمة", style = MaterialTheme.typography.labelLarge)
+        }
+        Spacer(Modifier.height(24.dp))
+        Text("الدخول بدعوة فقط • لا تسجيل عام", color = Cream, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "المصحف يعمل دون إنترنت بعد تنزيله",
+            color = Color(0xFFC8D2C3),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+/** Screen 2 — student home. */
+@Composable
+fun HomeScreen(
+    role: Role,
+    onNavigateLive: (String) -> Unit,
+    onNavigateClasses: () -> Unit,
+    onNavigateMushaf: () -> Unit,
+    onNavigatePrivate: (String) -> Unit,
+    onNavigateTeacher: (String) -> Unit,
+    viewModel: HomeViewModel = viewModel(),
+) {
+    val halqa = viewModel.halqa
+    val weekly = viewModel.weekly
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        MaqraatalNoorTopBar("السلام عليكم، أمينة", "مستوى التجويد • فصل المتقدمات")
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Next halqa card (deep green, as in the design).
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(DeepGreen)
+                    .padding(16.dp),
+            ) {
+                Column {
+                    Text("الحلقة القادمة", color = GoldLight, style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "فصل التجويد • مع المعلمة أم سارة",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        "${halqa.time} • ${halqa.surah}",
+                        color = Cream,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        GoldButton(text = "انضمي عند الموعد", onClick = { onNavigateLive(halqa.classId) })
+                        Spacer(Modifier.weight(1f))
+                        Text("يتبقى 02:14:30", color = GoldLight, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
+            Spacer(Modifier.height(20.dp))
+            SectionTitle("تقدمك هذا الأسبوع")
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatCard(number = weekly.halqas.toString(), label = "حلقات", modifier = Modifier.weight(1f))
+                StatCard(number = weekly.pagesRead.toString(), label = "صفحة قراءة", modifier = Modifier.weight(1f))
+                StatCard(number = "${weekly.tajweedScore}/5", label = "تقييم التجويد", modifier = Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(20.dp))
+            SectionTitle("فصولي")
+            Spacer(Modifier.height(8.dp))
+            viewModel.classes.take(2).forEach { classGroup ->
+                ClassCard(
+                    classGroup = classGroup,
+                    actionLabel = "دخول الفصل",
+                    onAction = { onNavigateClasses() },
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            if (role == Role.TEACHER) {
+                GoldButton(
+                    text = "تحكم المعلمة — فصل التجويد",
+                    onClick = { onNavigateTeacher("c-tajweed") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            SectionTitle("وصول سريع")
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickAction("المصحف", Modifier.weight(1f), onNavigateMushaf)
+                QuickAction("واجباتي (2)", Modifier.weight(1f), onNavigateClasses)
+                QuickAction("تسميعي الصوتي", Modifier.weight(1f)) { onNavigatePrivate("s-mariam") }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun StatCard(number: String, label: String, modifier: Modifier = Modifier) {
+    MaqraatalNoorCard(modifier) {
+        Text(
+            number,
+            style = MaterialTheme.typography.headlineMedium,
+            color = GoldDark,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Muted,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun QuickAction(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    androidx.compose.material3.OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(18.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = DeepGreen)
+    }
+}
+
+/** Screen 3 — classes and levels. */
+@Composable
+fun ClassesScreen(
+    onOpenLive: (String) -> Unit,
+    onOpenPrivate: (String) -> Unit,
+    viewModel: ClassesViewModel = viewModel(),
+) {
+    val student = viewModel.student
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        MaqraatalNoorTopBar("فصولي ومستوياتي", "مسارك من التأسيس إلى الإجازة")
+        Column(modifier = Modifier.padding(16.dp)) {
+            SectionTitle("مستواك الحالي")
+            Spacer(Modifier.height(12.dp))
+            LevelStepper(current = student.level)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "أنت هنا: ${student.level.arabicName} • ${(student.levelProgress * 100).toInt()}٪ من المستوى",
+                style = MaterialTheme.typography.bodyMedium,
+                color = GoldDark,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.End,
+            )
+            Spacer(Modifier.height(20.dp))
+            viewModel.classes.forEach { classGroup ->
+                val locked = classGroup.locked
+                ClassCard(
+                    classGroup = classGroup,
+                    actionLabel = when {
+                        locked -> "مقفل"
+                        classGroup.isPrivate -> "موعدي"
+                        else -> "دخول الفصل"
+                    },
+                    onAction = {
+                        when {
+                            locked -> Unit
+                            classGroup.isPrivate -> onOpenPrivate("s-mariam")
+                            else -> onOpenLive(classGroup.id)
+                        }
+                    },
+                    actionEnabled = !locked,
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            Text(
+                "مستوى الإجازة يفتح بعد إتمام الحفظ والتجويد، بالسند مع المشرفة العامة.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Muted,
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun LevelStepper(current: Level) {
+    val levels = Level.entries.sortedBy { it.order }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Top,
+    ) {
+        // RTL: first level appears at the right in the design; Row in RTL
+        // layout already orders children right-to-left.
+        levels.forEach { level ->
+            val done = level.order < current.order
+            val isCurrent = level == current
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(if (done || isCurrent) Gold else Color.White)
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        if (done) "✓" else (level.order + 1).toString(),
+                        color = if (done || isCurrent) DeepGreen else Muted,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    level.arabicName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isCurrent) GoldDark else Muted,
+                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                )
+            }
+        }
+    }
+}

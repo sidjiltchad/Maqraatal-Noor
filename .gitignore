@@ -1,3 +1,12 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# Android (Maqraatal-Noor)
+local.properties
+.gradle/
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aab

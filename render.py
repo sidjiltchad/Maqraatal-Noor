@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Maqraa Al-Noor v1 design renders — code-drawn phone screens (1080x1920).
+"""Maqraatal-Noor v1 design renders — code-drawn phone screens (1080x1920).
 Font note: UI typeface in the design system is Thamaniya (font.thmanyah.com,
 manual download, OTF, no redistribution). No Thamaniya file exists in this
 environment and its licence forbids redistribution, including sending the

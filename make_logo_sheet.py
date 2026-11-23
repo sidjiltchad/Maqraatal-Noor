@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Logo usage sheet + app icon for Maqraa Al-Noor, from the supplied logo.
+"""Logo usage sheet + app icon for Maqraatal-Noor, from the supplied logo.
 The supplied JPG is never redrawn or recoloured: it is cropped to a circle
 (the mark) or placed whole on a plain background. Small-size mark = the
 central emblem (mihrab + open book) cropped from the same file, no new art.

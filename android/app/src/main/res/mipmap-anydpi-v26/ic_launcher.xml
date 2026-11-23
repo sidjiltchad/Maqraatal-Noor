@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <!-- The supplied official logo, downsized to 512px, unredrawn. -->
+    <foreground android:drawable="@drawable/logo_maqraatalnoor" />
+</adaptive-icon>
