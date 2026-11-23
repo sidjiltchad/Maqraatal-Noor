@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,6 +22,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.key
+import org.maqraatalnoor.ui.viewmodels.TeacherRemoteViewModel
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.runtime.LaunchedEffect
+import org.maqraatalnoor.ui.viewmodels.PrivateChatViewModel
+import org.maqraatalnoor.ui.theme.Paper
+import org.maqraatalnoor.ui.theme.Ink
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -58,247 +68,217 @@ import org.maqraatalnoor.ui.theme.QuranFamily
 import org.maqraatalnoor.ui.viewmodels.PrivateSessionViewModel
 import org.maqraatalnoor.ui.viewmodels.TeacherViewModel
 
-/** Screen 6 — teacher control: attendance, turns, quick evaluation. */
+/** Screen 6 — teacher control, on real Supabase data. */
 @Composable
 fun TeacherControlScreen(
     classId: String,
     onBack: () -> Unit,
-    viewModel: TeacherViewModel = viewModel(),
+    viewModel: TeacherRemoteViewModel = viewModel(),
 ) {
-    val records by viewModel.records.collectAsState()
-    val evaluations by viewModel.evaluations.collectAsState()
-    val turns by viewModel.turns.collectAsState()
-    val savedMessage by viewModel.savedMessage.collectAsState()
-    var locked by remember { mutableStateOf(false) }
-
-    val students = DemoRepository.studentsInClass(classId)
-    val summary = viewModel.summary()
-    val currentReader = turns.firstOrNull { it.state == TurnState.READING }
+    val state by viewModel.state.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("تحكم المعلمة", "الحلقة العامة • مباشر • ${students.size} طالبات")
+        MaqraatalNoorTopBar(
+            "تحكم المعلمة",
+            "الحلقة العامة • ${state.students.size} طالبة • ${if (state.session?.status == "live") "مباشرة" else "لم تبدأ"}",
+        )
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TeacherPill(
-                    text = "كتم الجميع",
+                    text = "حاضرات ${state.presentCount}",
                     modifier = Modifier.weight(1f),
                     container = MaqraatalNoorGreen,
-                ) { viewModel.clearSavedMessage() }
+                ) { }
                 TeacherPill(
-                    text = if (locked) "فتح الدخول" else "قفل الدخول",
+                    text = "غائبات ${state.absentCount}",
                     modifier = Modifier.weight(1f),
                     container = MaqraatalNoorGreen,
-                ) { locked = !locked }
+                ) { }
                 TeacherPill(
-                    text = "إنهاء الحلقة",
+                    text = "رجوع",
                     modifier = Modifier.weight(1f),
                     container = LiveRed,
                     onClick = onBack,
                 )
             }
-            if (locked) {
-                Spacer(Modifier.height(8.dp))
-                Text("الدخول مقفل: لا انضمام جديد لهذه الحلقة.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+
+            if (state.loading) {
+                Spacer(Modifier.height(24.dp))
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = GoldDark)
+                }
             }
+            state.error?.let {
+                Spacer(Modifier.height(10.dp))
+                Text(it, color = LiveRed, style = MaterialTheme.typography.bodyMedium)
+            }
+            state.message?.let {
+                Spacer(Modifier.height(10.dp))
+                Text(it, color = GoldDark, style = MaterialTheme.typography.bodyMedium)
+            }
+
             Spacer(Modifier.height(16.dp))
             SectionTitle("الحضور والغياب")
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "حاضرات ${summary.present} من ${summary.total} • غائبات ${summary.absent}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Muted,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(10.dp))
-            students.forEach { student ->
-                val present = records.firstOrNull { it.studentId == student.id }?.present ?: true
-                val turn = turns.firstOrNull { it.student.id == student.id }
-                val state = when {
-                    currentReader?.student?.id == student.id -> "تقرأ الآن"
+            Spacer(Modifier.height(8.dp))
+
+            state.students.forEach { student ->
+                val present = state.attendance[student.userId] != false
+                val turn = state.turns.firstOrNull { it.studentId == student.userId }
+                val label = when {
+                    turn?.state == "reading" -> "تقرأ الآن"
                     turn?.handRaised == true -> "رافعة يدها"
-                    !present -> "لم تنضم بعد"
-                    else -> "تستمع"
+                    !present -> "غائبة"
+                    else -> levelLabel(student.level)
                 }
-                AttendanceRow(
-                    initial = student.initial,
-                    name = student.name,
-                    state = state,
-                    present = present,
-                    onToggle = { viewModel.toggleAttendance(student.id) },
-                    onGiveTurn = { viewModel.giveTurn(student.id) },
-                )
+                key(student.userId) {
+                    AttendanceRow(
+                        initial = student.name.takeLast(1),
+                        name = student.name,
+                        state = label,
+                        present = present,
+                        onToggle = { viewModel.toggleAttendance(student.userId) },
+                        onGiveTurn = { viewModel.giveTurn(student.userId) },
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
             }
+
             Spacer(Modifier.height(12.dp))
             SectionTitle("التقييم السريع")
             Spacer(Modifier.height(8.dp))
             MaqraatalNoorCard {
-                val readerName = currentReader?.student?.name ?: "—"
-                val evaluation = currentReader?.let { evaluations[it.student.id] }
+                val reader = state.currentReader
+                    ?.let { turn -> state.students.firstOrNull { it.userId == turn.studentId } }
+                    ?: state.students.firstOrNull()
                 Text(
-                    "تقييم سريع لـ $readerName",
+                    "تقييم ${reader?.name ?: "—"}",
                     style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    EvalChip("الحضور ✓", Modifier.weight(1f))
-                    EvalChip("الحفظ ${evaluation?.hifzScore ?: 3}/5", Modifier.weight(1f))
-                    EvalChip("التجويد ${evaluation?.tajweedScore ?: 4}/5", Modifier.weight(1f))
-                }
-                if (!evaluation?.note.isNullOrEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(evaluation.note, style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    EvalChip("4/5 تجويد", Modifier.weight(1f))
+                    EvalChip("5/5 حفظ", Modifier.weight(1f))
+                    EvalChip("حاضرة", Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(25.dp))
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(24.dp))
                         .background(DeepGreen)
                         .clickable {
-                            currentReader?.let { reader ->
-                                viewModel.saveEvaluation(
-                                    reader.student.id,
-                                    evaluation ?: org.maqraatalnoor.data.Evaluation(reader.student.id, 4, 3, true),
-                                )
-                            }
+                            reader?.let { viewModel.saveEvaluation(it.userId, 4, 5, "تقييم الحلقة") }
                         },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "حفظ التقييم وإرساله للطالبة",
+                        "حفظ التقييم",
                         color = Color.White,
                         style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            if (savedMessage != null) {
-                Text(
-                    savedMessage!!,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = GoldDark,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-            Text(
-                "التقييم والحضور يُحفظان على هذا الجهاز فقط في هذه النسخة، ولا يُرسلان إلى خادم.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Muted,
-            )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
 
-/** Screen 7 — private 1-to-1 session: messages, voice recitation, evaluation. */
+private fun levelLabel(level: String): String = when (level) {
+    "foundation" -> "التأسيس"
+    "tajweed" -> "التجويد"
+    "hifz" -> "الحفظ"
+    "ijaza" -> "الإجازة"
+    else -> level
+}
+/** Screen 7 — private thread between a teacher and one student (real data). */
 @Composable
 fun PrivateSessionScreen(
     studentId: String,
     onOpenMushaf: () -> Unit,
-    viewModel: PrivateSessionViewModel = viewModel(),
+    viewModel: PrivateChatViewModel = viewModel(),
 ) {
-    val messages by viewModel.messages.collectAsState()
+    val state by viewModel.state.collectAsState()
     var draft by remember { mutableStateOf("") }
-    var notice by remember { mutableStateOf<String?>(null) }
 
-    val student = DemoRepository.students.firstOrNull { it.id == studentId } ?: DemoRepository.students.first()
+    LaunchedEffect(studentId) { viewModel.load(studentId) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        MaqraatalNoorTopBar("جلسة فردية • ${student.name}", "إقراء • الخميس 18:30 • 25 دقيقة")
-        // Session position card.
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Spacer(Modifier.height(12.dp))
+    Column(modifier = Modifier.fillMaxSize().imePadding()) {
+        MaqraatalNoorTopBar(
+            "جلسة فردية",
+            state.studentName.ifBlank { "محادثة خاصة" },
+        )
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(HighlightGold)
-                    .padding(14.dp),
+                    .padding(12.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("موضع اليوم • سورة الكهف، آية 1", style = MaterialTheme.typography.labelLarge, color = DeepGreen)
-                    Text(
-                        "ٱلْحَمْدُ لِلَّهِ ٱلَّذِىٓ أَنزَلَ عَلَىٰ عَبْدِهِ ٱلْكِتَٰبَ وَلَمْ يَجْعَل لَّهُۥ عِوَجًا",
-                        fontFamily = QuranFamily,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium,
-                        textAlign = TextAlign.Center,
-                    )
-                }
+                Text(
+                    "رسائل بين المعلمة والطالبة فقط • تُحفظ في قاعدة البيانات",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = DeepGreen,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(messages) { message ->
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    if (message.isTeacher) Spacer(Modifier.weight(1f))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(if (message.isTeacher) DeepGreen else Color.White)
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                    ) {
-                        Column {
-                            if (message.isTeacher) {
-                                Text("المعلمة", color = Gold, style = MaterialTheme.typography.labelLarge)
-                            }
-                            if (message.isVoiceNote) {
-                                Text(
-                                    "▶ تسميع صوتي • ${"%02d:%02d".format(message.durationSeconds / 60, message.durationSeconds % 60)}",
-                                    color = if (message.isTeacher) Color.White else DeepGreen,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.clickable {
-                                        viewModel.playVoiceNote(message)
-                                        notice = "التشغيل الصوتي غير متوفر في هذه النسخة؛ التسميع يُسجَّل ويُحفظ محليا في النسخة الكاملة."
-                                    },
-                                )
-                            } else {
-                                Text(
-                                    message.text,
-                                    color = if (message.isTeacher) Color.White else DeepGreen,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-                            }
-                        }
-                    }
-                    if (!message.isTeacher) Spacer(Modifier.weight(1f))
-                }
+
+        if (state.loading) {
+            Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = GoldDark)
             }
         }
-        if (notice != null) {
+        state.error?.let {
             Text(
-                notice!!,
+                it,
+                color = LiveRed,
                 style = MaterialTheme.typography.bodyMedium,
-                color = GoldDark,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
-            Spacer(Modifier.height(6.dp))
         }
-        Text(
-            "الرسائل بين المعلمة والطالبة فقط • لا يراها أحد • محفوظة على الجهاز فقط",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Muted,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Spacer(Modifier.height(8.dp))
+
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(state.messages) { message ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = if (message.mine) Arrangement.Start else Arrangement.End,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .widthIn(max = 280.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (message.mine) MaqraatalNoorGreen else Paper)
+                            .border(
+                                1.dp,
+                                if (message.mine) MaqraatalNoorGreen else CardLine,
+                                RoundedCornerShape(16.dp),
+                            )
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                    ) {
+                        Text(
+                            message.body,
+                            color = if (message.mine) Color.White else Ink,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+        }
+
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedTextField(
@@ -311,7 +291,13 @@ fun PrivateSessionScreen(
             )
             Spacer(Modifier.width(8.dp))
             Button(
-                onClick = { viewModel.send(draft); draft = "" },
+                onClick = {
+                    val text = draft.trim()
+                    if (text.isNotEmpty()) {
+                        viewModel.send(text)
+                        draft = ""
+                    }
+                },
                 modifier = Modifier.size(52.dp),
                 shape = RoundedCornerShape(26.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = DeepGreen),
@@ -320,21 +306,20 @@ fun PrivateSessionScreen(
             }
         }
         Spacer(Modifier.height(10.dp))
-        Row(modifier = Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { notice = "المكالمات الصوتية الحقيقية غير متوفرة في هذه النسخة؛ تحتاج خادم SFU وإشارات وحسابات." }, modifier = Modifier.weight(1f)) {
-                Text("اتصال صوتي", color = DeepGreen)
-            }
-            OutlinedButton(onClick = { notice = "مكالمات الفيديو غير متوفرة في هذه النسخة؛ الكاميرا مغلقة افتراضيا حمايةً للخصوصية." }, modifier = Modifier.weight(1f)) {
-                Text("اتصال صورة", color = DeepGreen)
-            }
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             OutlinedButton(onClick = onOpenMushaf, modifier = Modifier.weight(1f)) {
                 Text("المصحف", color = DeepGreen)
+            }
+            OutlinedButton(onClick = { viewModel.load(studentId) }, modifier = Modifier.weight(1f)) {
+                Text("تحديث", color = DeepGreen)
             }
         }
         Spacer(Modifier.height(16.dp))
     }
 }
-
 /** Deep pill used by the teacher's top controls (design screen 6). */
 @Composable
 private fun TeacherPill(

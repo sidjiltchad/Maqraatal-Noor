@@ -13,6 +13,7 @@ import org.maqraatalnoor.data.remote.RemoteHalqa
 import org.maqraatalnoor.data.remote.RemoteMember
 import org.maqraatalnoor.data.remote.RemoteMembership
 import org.maqraatalnoor.data.remote.RemoteProfile
+import org.maqraatalnoor.data.remote.SessionHolder
 import org.maqraatalnoor.data.remote.SessionStore
 import org.maqraatalnoor.data.remote.SupabaseApi
 
@@ -90,6 +91,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     fun signOut() {
         val current = (_state.value as? AuthState.SignedIn)?.session
         store.clear()
+        SessionHolder.clear()
         _state.value = AuthState.SignedOut
         if (current != null) {
             viewModelScope.launch(Dispatchers.IO) { SupabaseApi.signOut(current.accessToken) }
@@ -114,6 +116,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
             val membership = withContext(Dispatchers.IO) { remote.membership() }
             val halqa = if (membership != null) withContext(Dispatchers.IO) { remote.halqa() } else null
             val members = if (membership != null) withContext(Dispatchers.IO) { remote.members() } else emptyList()
+            SessionHolder.update(session, profile)
             _state.value = AuthState.SignedIn(session, profile, membership, halqa, members)
             if (membership == null) {
                 _error.value = "حسابك ليس عضوا في الحلقة بعد؛ أدخل كود الدعوة"

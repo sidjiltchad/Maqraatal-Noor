@@ -166,7 +166,14 @@ private fun MainApp(
                     onNavigateLive = { classId -> navController.navigate(Routes.live(classId)) },
                     onNavigateClasses = { navController.navigate(Routes.CLASSES) },
                     onNavigateMushaf = { navController.navigate(Routes.MUSHAF) },
-                    onNavigatePrivate = { studentId -> navController.navigate(Routes.privateSession(studentId)) },
+                    onNavigatePrivate = { requested ->
+                        val target = if (state.isStaff) {
+                            state.students.firstOrNull()?.userId ?: requested
+                        } else {
+                            state.profile.id
+                        }
+                        navController.navigate(Routes.privateSession(target))
+                    },
                     onNavigateTeacher = { classId -> navController.navigate(Routes.teacher(classId)) },
                 )
             }

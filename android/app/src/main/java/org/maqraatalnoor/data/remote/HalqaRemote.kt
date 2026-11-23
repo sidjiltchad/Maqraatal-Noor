@@ -50,9 +50,9 @@ data class RemoteMessage(
  * وصول حقيقي إلى جداول الحلقة عبر PostgREST/RPC، بجلسة المستخدمة نفسها،
  * فكل العزل (RLS) مطبَّق من قاعدة البيانات لا من التطبيق.
  */
-class HalqaRemote(private val session: SupabaseApi.AuthSession) {
+class HalqaRemote(internal val session: SupabaseApi.AuthSession) {
 
-    private val token get() = session.accessToken
+    internal val token get() = session.accessToken
     val userId: String get() = session.userId
 
     suspend fun profile(): RemoteProfile? = withContext(Dispatchers.IO) {
@@ -212,3 +212,64 @@ class HalqaRemote(private val session: SupabaseApi.AuthSession) {
         )
     }
 }
+
+data class RemoteTurn(
+    val studentId: String,
+    val position: Int,
+    val state: String,
+    val handRaised: Boolean,
+)
+
+/** حضور الجلسة: معرّف العضوة ← حاضرة؟ */
+suspend fun HalqaRemote.attendance(sessionId: String): Map<String, Boolean> =
+    withContext(Dispatchers.IO) {
+        val rows = SupabaseApi.get(
+            "session_attendance?select=user_id,status&session_id=eq.$sessionId",
+            session.accessToken,
+        )
+        buildMap {
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                put(row.getString("user_id"), row.optString("status") == "present")
+            }
+        }
+    }
+
+suspend fun HalqaRemote.turns(sessionId: String): List<RemoteTurn> =
+    withContext(Dispatchers.IO) {
+        val rows = SupabaseApi.get(
+            "recitation_turns?select=student_id,position,state,hand_raised" +
+                "&session_id=eq.$sessionId&order=position.asc",
+            session.accessToken,
+        )
+        buildList {
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                add(
+                    RemoteTurn(
+                        studentId = row.getString("student_id"),
+                        position = row.optInt("position", index + 1),
+                        state = row.optString("state", "waiting"),
+                        handRaised = row.optBoolean("hand_raised", false),
+                    ),
+                )
+            }
+        }
+    }
+
+suspend fun HalqaRemote.raiseHand(sessionId: String) = withContext(Dispatchers.IO) {
+    SupabaseApi.rpc("raise_hand", JSONObject().put("p_session", sessionId), session.accessToken).let { }
+}
+
+suspend fun HalqaRemote.sendPrivateMessage(studentId: String, body: String) =
+    withContext(Dispatchers.IO) {
+        SupabaseApi.rpc(
+            "send_message",
+            JSONObject()
+                .put("p_thread", "private")
+                .put("p_body", body)
+                .put("p_student", studentId)
+                .put("p_kind", "text"),
+            session.accessToken,
+        ).let { }
+    }
