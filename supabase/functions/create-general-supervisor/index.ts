@@ -38,7 +38,7 @@ const PASSWORD_MAX = 72;
 function sanitizeName(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const name = value
-    .replace(/\p{Cntrl}/gu, " ")
+    .replace(/\p{Cc}/gu, " ")
     .replace(/\s+/gu, " ")
     .trim();
   if (name.length < NAME_MIN || name.length > NAME_MAX) return null;
