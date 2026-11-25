@@ -12,6 +12,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // LiveKit Android يعتمد على audioswitch المستضاف على JitPack
+        maven { url = uri("https://jitpack.io") }
     }
 }
 rootProject.name = "Maqraatal-Noor"

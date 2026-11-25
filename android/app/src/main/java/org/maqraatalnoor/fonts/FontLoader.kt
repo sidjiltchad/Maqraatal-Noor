@@ -6,20 +6,17 @@ import android.net.Uri
 import java.io.File
 
 /**
- * Manual font import — Thamaniya pattern, as in Miraat. NO font file is
- * bundled in this app, downloaded by it, or requested from anyone.
+ * Manual interface-font import, kept for user-supplied faces.
  *
- * The user downloads the font herself from the official site only
- * (ask.thmanyah.com, by email, OTF) and imports it here (.otf/.ttf via
- * the system file picker) into this app's private files folder. The app
- * then offers the imported fonts plus the bundled default, IBM Plex Sans
- * Arabic (open licence). This app does not distribute Thamaniya and does
- * not host it. The full licence text arrives with the download email and
- * was not read here, so embedding the font in an app build is NOT decided
- * by this code: import is device-local only.
+ * The app's default interface family is the bundled Thmanyah Sans payload
+ * (see [ThmanyahSans]): three official OTF files stored only as AES-256-GCM
+ * encrypted assets, decrypted in memory and never written back to disk. This
+ * object deals only with fonts the user imports herself (.otf/.ttf via the
+ * system file picker) into this app's private files folder. An imported font
+ * replaces the default on the interface only, on the user's own device.
  *
- * Quran text never uses an imported font: it always uses the bundled
- * Noto Naskh Arabic family (see ui/theme).
+ * Quran text never uses an imported font: it always uses the bundled Noto
+ * Naskh Arabic family (see ui/theme).
  */
 object FontLoader {
     const val OFFICIAL_SITE = "ask.thmanyah.com"

@@ -1,15 +1,19 @@
 package org.maqraatalnoor.ui.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import org.maqraatalnoor.R
+import org.maqraatalnoor.fonts.ThmanyahSans
 
 /**
- * Interface type: bundled IBM Plex Sans Arabic (open licence), the
- * documented stand-in for Thamaniya in design v1.1. No Thamaniya file is
- * bundled. A user-imported font (see fonts/FontLoader) replaces this
- * family at runtime on the user's own device only.
+ * Fallback interface family: bundled IBM Plex Sans Arabic (open licence).
+ * The app's default is Thmanyah Sans (see [rememberDefaultUiFamily]); Plex is
+ * used only when the encrypted Thmanyah payload cannot be loaded. A
+ * user-imported font replaces either family at runtime on the user's device.
  */
 val PlexFamily = FontFamily(
     Font(R.font.ibm_plex_sans_arabic_regular, FontWeight.Normal),
@@ -17,6 +21,18 @@ val PlexFamily = FontFamily(
     Font(R.font.ibm_plex_sans_arabic_semibold, FontWeight.SemiBold),
     Font(R.font.ibm_plex_sans_arabic_bold, FontWeight.Bold),
 )
+
+/**
+ * Resolves the default interface family from the encrypted, in-memory-only
+ * Thmanyah Sans payload, falling back to [PlexFamily] on any error. The
+ * decrypt/build work is cached by [ThmanyahSans] and remembered here, so it
+ * runs once per composition rather than once per text style.
+ */
+@Composable
+fun rememberDefaultUiFamily(): FontFamily {
+    val context = LocalContext.current.applicationContext
+    return remember(context) { ThmanyahSans.load(context) } ?: PlexFamily
+}
 
 /**
  * Quran text: Amiri Quran (SIL OFL) for the Madani page layout, with the

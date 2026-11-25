@@ -35,10 +35,12 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -106,6 +108,7 @@ private const val DOUBLE_TAP_ZOOM = MAX_ZOOM
  */
 @Composable
 fun MushafScreen(
+    onBack: () -> Unit,
     viewModel: MushafViewModel = viewModel(),
 ) {
     val source by viewModel.source.collectAsState()
@@ -170,6 +173,7 @@ fun MushafScreen(
                 Column(modifier = Modifier.fillMaxSize()) {
                     MushafHeader(
                         source = source,
+                        onBack = onBack,
                         onOpenIndex = { scope.launch { drawerState.open() } },
                     )
                     HorizontalPager(
@@ -199,6 +203,7 @@ fun MushafScreen(
 @Composable
 private fun MushafHeader(
     source: MushafSource,
+    onBack: () -> Unit,
     onOpenIndex: () -> Unit,
 ) {
     Row(
@@ -209,6 +214,9 @@ private fun MushafHeader(
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        IconButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = Color.White)
+        }
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(18.dp))

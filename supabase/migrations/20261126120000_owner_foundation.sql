@@ -1,0 +1,7 @@
+-- =============================================================================
+--  Superseded: this pre-acceptance draft was replaced by
+--  supabase/migrations/20261125150000_owner_foundation.sql before acceptance.
+--
+--  This file intentionally contains no SQL.  The current owner-foundation
+--  migration is 20261125150000_owner_foundation.sql; do not add owner SQL here.
+-- =============================================================================

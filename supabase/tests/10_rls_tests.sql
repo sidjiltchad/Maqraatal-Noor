@@ -50,6 +50,31 @@ cross join (values ('11111111-1111-1111-1111-111111111111'::uuid),
                    ('22222222-2222-2222-2222-222222222222'::uuid)) as u(id)
 where not exists (select 1 from public.session_attendance);
 
+-- Phase 5 fixtures: teachers are scoped to explicitly assigned group/levels.
+-- Teacher 333 needs both students; teacher 444 needs أمينة for the flow tests.
+insert into public.groups (halqa_id, name, created_by)
+select public.main_halqa_id(), 'مجموعة RLS 20261127', null
+where not exists (
+  select 1 from public.groups
+   where halqa_id = public.main_halqa_id() and name = 'مجموعة RLS 20261127'
+);
+
+insert into public.member_groups (user_id, group_id, level)
+select v.user_id, g.id, 'tajweed'
+from (values ('11111111-1111-1111-1111-111111111111'::uuid),
+             ('22222222-2222-2222-2222-222222222222'::uuid)) as v(user_id)
+join public.groups g
+  on g.halqa_id = public.main_halqa_id() and g.name = 'مجموعة RLS 20261127'
+on conflict (user_id, group_id, level) do nothing;
+
+insert into public.teacher_assignments (teacher_id, group_id, level, assigned_by)
+select v.teacher_id, g.id, 'tajweed', null
+from (values ('33333333-3333-3333-3333-333333333333'::uuid),
+             ('44444444-4444-4444-4444-444444444444'::uuid)) as v(teacher_id)
+join public.groups g
+  on g.halqa_id = public.main_halqa_id() and g.name = 'مجموعة RLS 20261127'
+on conflict (teacher_id, group_id, level) do nothing;
+
 -- -----------------------------------------------------------------------------
 -- 2) الطالبة أمينة: ترى نفسها، لا ترى حضور غيرها، ولا الرسائل الخاصة لغيرها
 -- -----------------------------------------------------------------------------
@@ -180,14 +205,14 @@ select set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555
 set role authenticated;
 
 do $$
-declare v_member public.halqa_members;
+declare v_inv public.invitations;
 begin
   if not public.is_staff() then raise exception 'FAIL: المشرفة ليست من الطاقم'; end if;
 
-  v_member := public.redeem_invitation(
-    (select code from public.invitations order by created_at desc limit 1)
-  );
-  if v_member.user_id <> auth.uid() then raise exception 'FAIL: الدعوة لم تُطبَّق'; end if;
+  v_inv := public.create_invitation('student', 1, 5);
+  if v_inv.id is null or v_inv.role <> 'student' then
+    raise exception 'FAIL: المشرفة لم تستطع إنشاء دعوة طالبة';
+  end if;
 end $$;
 
 reset role;

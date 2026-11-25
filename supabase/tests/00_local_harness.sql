@@ -3,9 +3,9 @@
 --  تُنفَّذ فقط على قاعدة اختبار محلية، لا على Supabase.
 -- =============================================================================
 
-create role anon nologin;
-create role authenticated nologin;
-create role service_role nologin bypassrls;
+do $$ begin create role anon nologin; exception when duplicate_object then null; end $$;
+do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;
+do $$ begin create role service_role nologin bypassrls; exception when duplicate_object then null; end $$;
 
 create schema if not exists auth;
 create schema if not exists storage;
@@ -13,6 +13,8 @@ create schema if not exists storage;
 create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
   email text unique,
+  aud text not null default 'authenticated',
+  role text not null default 'authenticated',
   raw_user_meta_data jsonb default '{}'::jsonb
 );
 

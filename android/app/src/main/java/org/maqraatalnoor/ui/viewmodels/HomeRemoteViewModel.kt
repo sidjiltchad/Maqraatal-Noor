@@ -17,6 +17,16 @@ import java.util.Locale
 /** بطاقة الحلقة القادمة وأرقام الأسبوع، من قاعدة البيانات. */
 class HomeRemoteViewModel : ViewModel() {
 
+    data class GroupSummary(
+        val id: String,
+        val name: String,
+        val foundation: Int = 0,
+        val tajweed: Int = 0,
+        val hifz: Int = 0,
+    ) {
+        val total: Int get() = foundation + tajweed + hifz
+    }
+
     data class UiState(
         val loading: Boolean = true,
         val nextTitle: String = "لا حلقة مجدولة",
@@ -24,6 +34,7 @@ class HomeRemoteViewModel : ViewModel() {
         val sessionsThisWeek: Int = 0,
         val averageTajweed: String = "—",
         val myAttendance: Int = 0,
+        val groups: List<GroupSummary> = emptyList(),
     )
 
     private val _state = MutableStateFlow(UiState())
@@ -73,6 +84,28 @@ class HomeRemoteViewModel : ViewModel() {
                     )
                 }
 
+                val groupRows = withContext(Dispatchers.IO) {
+                    SupabaseApi.get("groups?select=id,name&order=name.asc", token)
+                }
+                val enrollmentRows = withContext(Dispatchers.IO) {
+                    SupabaseApi.get("member_groups?select=group_id,level", token)
+                }
+
+                val groups = (0 until groupRows.length()).mapNotNull { groupRows.optJSONObject(it) }.map { group ->
+                    val gid = group.optString("id")
+                    var f = 0; var tj = 0; var h = 0
+                    for (i in 0 until enrollmentRows.length()) {
+                        val row = enrollmentRows.optJSONObject(i) ?: continue
+                        if (row.optString("group_id") != gid) continue
+                        when (row.optString("level")) {
+                            "foundation" -> f++
+                            "tajweed" -> tj++
+                            "hifz" -> h++
+                        }
+                    }
+                    GroupSummary(gid, group.optString("name"), f, tj, h)
+                }
+
                 val upcoming = sessions.firstOrNull { it.first == "scheduled" || it.first == "live" }
                 val weekCount = sessions.count { it.second >= weekAgo }
                 val scores = (0 until evaluations.length())
@@ -90,6 +123,7 @@ class HomeRemoteViewModel : ViewModel() {
                     sessionsThisWeek = weekCount,
                     averageTajweed = average,
                     myAttendance = attendance.length(),
+                    groups = groups,
                 )
             }.onFailure {
                 _state.value = _state.value.copy(loading = false)

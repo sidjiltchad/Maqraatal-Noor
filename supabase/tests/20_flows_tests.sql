@@ -8,6 +8,26 @@ insert into auth.users (id, email, raw_user_meta_data)
 values ('77777777-7777-7777-7777-777777777777', 'hind@test.local', '{"full_name":"هند"}')
 on conflict (id) do nothing;
 
+-- Phase 5 fixture: teacher 444 operates on أمينة, so the assignment must exist.
+insert into public.groups (halqa_id, name, created_by)
+select public.main_halqa_id(), 'مجموعة RLS 20261127', null
+where not exists (
+  select 1 from public.groups
+   where halqa_id = public.main_halqa_id() and name = 'مجموعة RLS 20261127'
+);
+
+insert into public.member_groups (user_id, group_id, level)
+select '11111111-1111-1111-1111-111111111111', g.id, 'tajweed'
+from public.groups g
+where g.halqa_id = public.main_halqa_id() and g.name = 'مجموعة RLS 20261127'
+on conflict (user_id, group_id, level) do nothing;
+
+insert into public.teacher_assignments (teacher_id, group_id, level, assigned_by)
+select '44444444-4444-4444-4444-444444444444', g.id, 'tajweed', null
+from public.groups g
+where g.halqa_id = public.main_halqa_id() and g.name = 'مجموعة RLS 20261127'
+on conflict (teacher_id, group_id, level) do nothing;
+
 do $$
 declare v_count integer;
 begin
@@ -48,7 +68,14 @@ begin
 
   v_member := public.redeem_invitation(v_code);
   if v_member.user_id <> auth.uid() then raise exception 'FAIL: الدعوة لم تنضم هند'; end if;
-  if not public.is_member() then raise exception 'FAIL: هند ليست عضوة بعد الدعوة'; end if;
+  if v_member.status <> 'pending' then raise exception 'FAIL: دعوة الطالبة يجب أن تبدأ بعضوية معلّقة'; end if;
+  if public.is_member() then raise exception 'FAIL: العضوية المعلّقة عُدّت فعّالة قبل موافقة المشرفة'; end if;
+
+  -- اعتماد العضوية من المشرفة بعد استهلاك الدعوة.
+  perform set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false);
+  perform public.accept_member('77777777-7777-7777-7777-777777777777');
+  perform set_config('request.jwt.claim.sub', '77777777-7777-7777-7777-777777777777', false);
+  if not public.is_member() then raise exception 'FAIL: لم تصبح هند عضوة بعد موافقة المشرفة'; end if;
 
   -- الكود استُهلك: محاولة ثانية من مستخدمة أخرى تفشل
   perform set_config('test.invite_code', v_code, false);

@@ -37,18 +37,19 @@ private val MaqraatalNoorColors = lightColorScheme(
 )
 
 /**
- * [uiFamily] is the bundled Plex family by default, or a user-imported
- * font family resolved by the caller. The Quran family is never replaced
- * by this parameter (see [QuranFamily]).
+ * [uiFamily] is a user-imported family when the user selected one; null means
+ * the bundled default, Thmanyah Sans, with [PlexFamily] as the safe fallback.
+ * The Quran family is never replaced by this parameter (see [QuranFamily]).
  */
 @Composable
 fun MaqraatalNoorTheme(
-    uiFamily: FontFamily = PlexFamily,
+    uiFamily: FontFamily? = null,
     content: @Composable () -> Unit,
 ) {
+    val defaultFamily = rememberDefaultUiFamily()
     MaterialTheme(
         colorScheme = MaqraatalNoorColors,
-        typography = typographyFor(uiFamily),
+        typography = typographyFor(uiFamily ?: defaultFamily),
         content = content,
     )
 }

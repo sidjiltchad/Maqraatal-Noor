@@ -19,9 +19,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -52,19 +56,20 @@ import org.maqraatalnoor.ui.viewmodels.LiveSessionViewModel
 
 /**
  * Screen 4 — الحلقة الحية، على الجلسة والطابور الحقيقيين من Supabase.
- * الصوت والصورة محاكاة في هذه النسخة؛ الجلسة والدور والحضور حقيقية.
+ * إدارة الدور والحضور والمصحف هنا، والصوت/الفيديو عبر مسار مكالمة LiveKit.
  */
 @Composable
 fun LiveHalqaScreen(
     classId: String,
     onBack: () -> Unit,
     onOpenMushaf: () -> Unit,
+    onJoinCall: () -> Unit,
     viewModel: LiveSessionViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsState()
 
-    DisposableEffect(Unit) {
-        viewModel.start()
+    DisposableEffect(classId) {
+        viewModel.start(classId)
         onDispose { viewModel.stop() }
     }
 
@@ -78,6 +83,9 @@ fun LiveHalqaScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = Color.White)
+            }
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
@@ -245,6 +253,18 @@ fun LiveHalqaScreen(
             }
 
             Spacer(Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .clip(RoundedCornerShape(25.dp))
+                    .background(Gold)
+                    .clickable { onJoinCall() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("دخول المكالمة الصوتية", color = DeepGreen, style = MaterialTheme.typography.labelLarge)
+            }
+            Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!viewModel.isStaff) {
                     Box(

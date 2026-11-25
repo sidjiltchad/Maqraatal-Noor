@@ -13,6 +13,7 @@ data class RemoteMembership(
     val role: String,
     val level: String,
     val progress: Float,
+    val status: String = "active",
 )
 
 data class RemoteHalqa(
@@ -28,6 +29,7 @@ data class RemoteMember(
     val name: String,
     val role: String,
     val level: String,
+    val graduated: Boolean = false,
     val progress: Float,
 )
 
@@ -44,6 +46,7 @@ data class RemoteMessage(
     val senderName: String,
     val body: String,
     val isVoice: Boolean,
+    val senderId: String = "",
 )
 
 /**
@@ -67,7 +70,7 @@ class HalqaRemote(internal val session: SupabaseApi.AuthSession) {
 
     suspend fun membership(): RemoteMembership? = withContext(Dispatchers.IO) {
         val rows = SupabaseApi.get(
-            "halqa_members?select=user_id,role,level,level_progress&user_id=eq.${session.userId}",
+            "halqa_members?select=user_id,role,level,level_progress,status&user_id=eq.${session.userId}",
             token,
         )
         val row = rows.optJSONObject(0) ?: return@withContext null
@@ -77,6 +80,7 @@ class HalqaRemote(internal val session: SupabaseApi.AuthSession) {
             role = row.optString("role", "student"),
             level = row.optString("level", "foundation"),
             progress = row.optDouble("level_progress", 0.0).toFloat(),
+            status = row.optString("status", "active"),
         )
     }
 
@@ -97,14 +101,14 @@ class HalqaRemote(internal val session: SupabaseApi.AuthSession) {
 
     suspend fun members(): List<RemoteMember> = withContext(Dispatchers.IO) {
         val rows = SupabaseApi.get(
-            "halqa_members?select=user_id,role,level,level_progress,status,profiles(full_name)" +
+            "halqa_member_directory?select=user_id,role,level,level_progress,graduated,status,full_name" +
                 "&status=eq.active&order=role.desc",
             token,
         )
         buildList {
             for (index in 0 until rows.length()) {
                 val row = rows.optJSONObject(index) ?: continue
-                val name = row.optJSONObject("profiles")?.optString("full_name").orEmpty()
+                val name = row.optString("full_name").orEmpty()
                 add(
                     RemoteMember(
                         userId = row.getString("user_id"),
@@ -112,15 +116,17 @@ class HalqaRemote(internal val session: SupabaseApi.AuthSession) {
                         role = row.optString("role", "student"),
                         level = row.optString("level", "foundation"),
                         progress = row.optDouble("level_progress", 0.0).toFloat(),
+                        graduated = row.optBoolean("graduated", false),
                     ),
                 )
             }
         }
     }
 
-    suspend fun latestSession(): RemoteSession? = withContext(Dispatchers.IO) {
+    suspend fun latestSession(halqaId: String? = null): RemoteSession? = withContext(Dispatchers.IO) {
+        val halqaFilter = halqaId?.takeIf { it.isNotBlank() }?.let { "&halqa_id=eq.$it" }.orEmpty()
         val rows = SupabaseApi.get(
-            "sessions?select=id,status,current_page,current_reader&order=created_at.desc&limit=1",
+            "sessions?select=id,status,current_page,current_reader&order=created_at.desc&limit=1$halqaFilter",
             token,
         )
         val row = rows.optJSONObject(0) ?: return@withContext null
@@ -198,6 +204,7 @@ class HalqaRemote(internal val session: SupabaseApi.AuthSession) {
                             senderName = "",
                             body = row.optString("body"),
                             isVoice = row.optString("kind") == "voice",
+                            senderId = row.optString("sender_id"),
                         ),
                     )
                 }

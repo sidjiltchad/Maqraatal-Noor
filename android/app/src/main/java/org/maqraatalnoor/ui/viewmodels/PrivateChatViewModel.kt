@@ -56,7 +56,7 @@ class PrivateChatViewModel : ViewModel() {
                 val name = withContext(Dispatchers.IO) {
                     runCatching {
                         org.maqraatalnoor.data.remote.SupabaseApi.get(
-                            "profiles?select=full_name&id=eq.$studentId",
+                            "profile_directory?select=full_name&id=eq.$studentId",
                             SessionHolder.session?.accessToken.orEmpty(),
                         ).optJSONObject(0)?.optString("full_name").orEmpty()
                     }.getOrDefault("")

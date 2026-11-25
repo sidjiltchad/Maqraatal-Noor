@@ -94,11 +94,20 @@ object SupabaseApi {
     }
 
     // ----------------------------------------------------------- rest/rpc ----
+
+    /**
+     * لا تُبنى أي طلبية محمية بتوكن فارغ أو بمفتاح anon: الحماية في قاعدة
+     * البيانات تتطلب جلسة مستخدمة حقيقية، والسماح بغيرها يعرض 401 مضللا.
+     */
+    private fun userBearer(token: String): String =
+        AccessTokenPolicy.requireUserToken(token, anonKey)
+
     fun get(path: String, token: String): JSONArray {
+        val bearer = userBearer(token)
         val request = Request.Builder()
             .url("$baseUrl/rest/v1/$path")
             .addHeader("apikey", anonKey)
-            .addHeader("Authorization", "Bearer $token")
+            .addHeader("Authorization", "Bearer $bearer")
             .get()
             .build()
         return JSONArray(execute(request))
@@ -106,22 +115,48 @@ object SupabaseApi {
 
     /** إدخال صف في جدول وإرجاع الصفوف المُنشأة. */
     fun post(table: String, payload: JSONObject, token: String): JSONArray {
+        val bearer = userBearer(token)
         val request = Request.Builder()
             .url("$baseUrl/rest/v1/$table")
             .addHeader("apikey", anonKey)
-            .addHeader("Authorization", "Bearer $token")
+            .addHeader("Authorization", "Bearer $bearer")
             .addHeader("Prefer", "return=representation")
             .post(payload.toString().toRequestBody(jsonMedia))
             .build()
         return JSONArray(execute(request))
     }
 
-    /** ينفّذ دالة RPC ويعيد نص الاستجابة كما هو. */
-    fun rpc(name: String, payload: JSONObject, token: String): String {
+    /** تحديث صفوف جدول (PATCH) وإرجاع الصفوف المحدَّثة. */
+    fun patch(table: String, payload: JSONObject, token: String): String {
+        val bearer = userBearer(token)
+        val request = Request.Builder()
+            .url("$baseUrl/rest/v1/$table")
+            .addHeader("apikey", anonKey)
+            .addHeader("Authorization", "Bearer $bearer")
+            .addHeader("Prefer", "return=representation")
+            .patch(payload.toString().toRequestBody(jsonMedia))
+            .build()
+        return execute(request)
+    }
+
+    /** دالة RPC بصلاحية anon (قبل تسجيل الدخول) — مثل إرسال طلب التحاق. */
+    fun rpcAnon(name: String, payload: JSONObject): String {
         val request = Request.Builder()
             .url("$baseUrl/rest/v1/rpc/$name")
             .addHeader("apikey", anonKey)
-            .addHeader("Authorization", "Bearer $token")
+            .addHeader("Authorization", "Bearer $anonKey")
+            .post(payload.toString().toRequestBody(jsonMedia))
+            .build()
+        return execute(request)
+    }
+
+    /** ينفّذ دالة RPC ويعيد نص الاستجابة كما هو. */
+    fun rpc(name: String, payload: JSONObject, token: String): String {
+        val bearer = userBearer(token)
+        val request = Request.Builder()
+            .url("$baseUrl/rest/v1/rpc/$name")
+            .addHeader("apikey", anonKey)
+            .addHeader("Authorization", "Bearer $bearer")
             .post(payload.toString().toRequestBody(jsonMedia))
             .build()
         return execute(request)

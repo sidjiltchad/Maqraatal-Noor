@@ -34,6 +34,17 @@ Deno.serve(async (req: Request) => {
     return json({ error: "method_not_allowed" }, 405);
   }
 
+  let callRequest: { thread?: string; student_id?: string };
+  try {
+    callRequest = await req.json();
+  } catch {
+    return json({ error: "invalid_request" }, 400);
+  }
+  const thread = callRequest.thread ?? "halqa";
+  if (thread !== "halqa" && thread !== "private") {
+    return json({ error: "invalid_thread" }, 400);
+  }
+
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) {
     return json({ error: "unauthorized" }, 401);
@@ -61,7 +72,7 @@ Deno.serve(async (req: Request) => {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!member || member.status === "left") {
+  if (!member || member.status !== "active") {
     return json({ error: "not_a_member" }, 403);
   }
 
@@ -74,13 +85,31 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("LIVEKIT_API_KEY");
   const apiSecret = Deno.env.get("LIVEKIT_API_SECRET");
   const url = Deno.env.get("LIVEKIT_URL");
-  const room = Deno.env.get("LIVEKIT_ROOM") ?? "maqraa-main";
+  const roomPrefix = Deno.env.get("LIVEKIT_ROOM") ?? "maqraa-main";
 
   if (!apiKey || !apiSecret || !url) {
     return json({ error: "server_not_configured" }, 500);
   }
 
   const isStaff = profile?.role === "teacher" || profile?.role === "supervisor";
+
+  let room = roomPrefix;
+  if (thread === "private") {
+    const studentId = callRequest.student_id;
+    if (!studentId) return json({ error: "student_required" }, 400);
+    const { data: target } = await supabase
+      .from("halqa_members")
+      .select("role,status")
+      .eq("user_id", studentId)
+      .maybeSingle();
+    if (!target || target.role !== "student" || target.status !== "active") {
+      return json({ error: "student_not_active" }, 403);
+    }
+    if (!isStaff && studentId !== user.id) {
+      return json({ error: "private_call_forbidden" }, 403);
+    }
+    room = `${roomPrefix}-p-${studentId.replaceAll("-", "")}`;
+  }
 
   const token = new AccessToken(apiKey, apiSecret, {
     identity: user.id,

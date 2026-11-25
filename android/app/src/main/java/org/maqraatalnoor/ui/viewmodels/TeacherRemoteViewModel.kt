@@ -34,11 +34,7 @@ class TeacherRemoteViewModel : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()
 
-    init {
-        refresh()
-    }
-
-    fun refresh() {
+    fun refresh(halqaId: String? = null) {
         viewModelScope.launch {
             val remote = SessionHolder.remote
             if (remote == null) {
@@ -48,8 +44,8 @@ class TeacherRemoteViewModel : ViewModel() {
             try {
                 val members = withContext(Dispatchers.IO) { remote.members() }
                 val halqa = withContext(Dispatchers.IO) { remote.halqa() }
-                var session = withContext(Dispatchers.IO) { remote.latestSession() }
-                if (session == null && halqa != null && SessionHolder.isStaff) {
+                var session = withContext(Dispatchers.IO) { remote.latestSession(halqaId) }
+                if (session == null && halqa != null && SessionHolder.isStaff && (halqaId.isNullOrBlank() || halqa.id == halqaId)) {
                     session = withContext(Dispatchers.IO) { remote.createSession(halqa.id) }
                 }
                 val attendance = session?.let { withContext(Dispatchers.IO) { remote.attendance(it.id) } }

@@ -77,6 +77,7 @@ fun TeacherControlScreen(
     viewModel: TeacherRemoteViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    LaunchedEffect(classId) { viewModel.refresh(classId) }
 
     Column(
         modifier = Modifier
@@ -93,12 +94,12 @@ fun TeacherControlScreen(
                     text = "حاضرات ${state.presentCount}",
                     modifier = Modifier.weight(1f),
                     container = MaqraatalNoorGreen,
-                ) { }
+                )
                 TeacherPill(
                     text = "غائبات ${state.absentCount}",
                     modifier = Modifier.weight(1f),
                     container = MaqraatalNoorGreen,
-                ) { }
+                )
                 TeacherPill(
                     text = "رجوع",
                     modifier = Modifier.weight(1f),
@@ -328,14 +329,14 @@ private fun TeacherPill(
     text: String,
     modifier: Modifier = Modifier,
     container: Color,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
             .height(46.dp)
             .clip(RoundedCornerShape(23.dp))
             .background(container)
-            .clickable(onClick = onClick)
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
             .padding(horizontal = 6.dp),
         contentAlignment = Alignment.Center,
     ) {

@@ -56,9 +56,11 @@ class LiveSessionViewModel : ViewModel() {
     val myId: String get() = SessionHolder.userId
 
     private var realtime: RealtimeClient? = null
+    private var halqaId: String? = null
 
-    fun start() {
+    fun start(halqaId: String) {
         if (poller?.isActive == true) return
+        this.halqaId = halqaId
         val token = SessionHolder.session?.accessToken
         if (token != null) {
             realtime = RealtimeClient(
@@ -90,10 +92,12 @@ class LiveSessionViewModel : ViewModel() {
         }
         runCatching {
             val members = withContext(Dispatchers.IO) { remote.members() }
-            var session = withContext(Dispatchers.IO) { remote.latestSession() }
+            var session = withContext(Dispatchers.IO) { remote.latestSession(halqaId) }
             if (session == null && SessionHolder.isStaff) {
                 val halqa = withContext(Dispatchers.IO) { remote.halqa() }
-                if (halqa != null) session = withContext(Dispatchers.IO) { remote.createSession(halqa.id) }
+                if (halqa != null && (halqaId.isNullOrBlank() || halqa.id == halqaId)) {
+                    session = withContext(Dispatchers.IO) { remote.createSession(halqa.id) }
+                }
             }
             val turns = session?.let { withContext(Dispatchers.IO) { remote.turns(it.id) } } ?: emptyList()
             val attendance = session?.let { withContext(Dispatchers.IO) { remote.attendance(it.id) } } ?: emptyMap()

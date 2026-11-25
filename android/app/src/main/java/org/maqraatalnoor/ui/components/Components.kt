@@ -1,6 +1,7 @@
 package org.maqraatalnoor.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,19 +27,22 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarDefaults
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +58,32 @@ import org.maqraatalnoor.ui.theme.MaqraatalNoorGreen
 import org.maqraatalnoor.ui.theme.Muted
 import org.maqraatalnoor.ui.theme.Paper
 
+/** هالة زخرفية هادئة مستوحاة من الأقواس والنقوش الهندسية في هوية المقرأة. */
+@Composable
+fun MaqraatalNoorPattern(modifier: Modifier = Modifier) {
+    Canvas(modifier) {
+        val step = 112.dp.toPx()
+        val radius = 15.dp.toPx()
+        val stroke = 1.dp.toPx()
+        val tint = GoldDark.copy(alpha = 0.045f)
+        var y = 40.dp.toPx()
+        while (y < size.height) {
+            var x = 30.dp.toPx() + if ((y / step).toInt() % 2 == 0) 0f else step / 2f
+            while (x < size.width) {
+                val center = Offset(x, y)
+                drawCircle(tint, radius, center, style = Stroke(stroke))
+                drawCircle(tint, radius * 0.45f, center, style = Stroke(stroke))
+                drawLine(tint, Offset(x - radius, y), Offset(x + radius, y), stroke)
+                drawLine(tint, Offset(x, y - radius), Offset(x, y + radius), stroke)
+                drawLine(tint, Offset(x - radius * .7f, y - radius * .7f), Offset(x + radius * .7f, y + radius * .7f), stroke)
+                drawLine(tint, Offset(x + radius * .7f, y - radius * .7f), Offset(x - radius * .7f, y + radius * .7f), stroke)
+                x += step
+            }
+            y += step
+        }
+    }
+}
+
 /**
  * Deep-green header with the supplied official logo (small, in its white
  * disc) and the screen title. The header is drawn edge-to-edge: it extends
@@ -61,7 +91,7 @@ import org.maqraatalnoor.ui.theme.Paper
  * empty band shows above it. The logo is never redrawn or recoloured.
  */
 @Composable
-fun MaqraatalNoorTopBar(title: String, subtitle: String? = null) {
+fun MaqraatalNoorTopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -70,6 +100,12 @@ fun MaqraatalNoorTopBar(title: String, subtitle: String? = null) {
             .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (onBack != null) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = Color.White)
+            }
+            Spacer(Modifier.width(4.dp))
+        }
         Column(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.Start,
@@ -234,58 +270,6 @@ private fun PillAction(text: String, enabled: Boolean, onClick: () -> Unit) {
             color = if (enabled) DeepGreen else Muted,
             maxLines = 1,
         )
-    }
-}
-
-data class BottomNavItem(val label: String, val route: String)
-
-@Composable
-fun MaqraatalNoorBottomNav(
-    items: List<BottomNavItem>,
-    currentRoute: String?,
-    onNavigate: (String) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Paper),
-    ) {
-        HorizontalDivider(thickness = 1.dp, color = CardLine)
-        NavigationBar(
-            containerColor = Paper,
-            contentColor = DeepGreen,
-            tonalElevation = 0.dp,
-            windowInsets = NavigationBarDefaults.windowInsets,
-        ) {
-            items.forEach { item ->
-                val selected = currentRoute == item.route
-                NavigationBarItem(
-                    selected = selected,
-                    onClick = { onNavigate(item.route) },
-                    icon = {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .clip(CircleShape)
-                                .background(if (selected) Gold else Color(0xFFDED3B6)),
-                        )
-                    },
-                    label = {
-                        Text(
-                            item.label,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (selected) GoldDark else Muted,
-                            maxLines = 1,
-                        )
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = Color.Transparent,
-                        selectedIconColor = Gold,
-                        unselectedIconColor = Muted,
-                    ),
-                )
-            }
-        }
     }
 }
 

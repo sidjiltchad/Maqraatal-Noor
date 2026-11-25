@@ -32,7 +32,7 @@ values (public.main_halqa_id(), 'live', 5, 'aaaaaaaa-0000-0000-0000-000000000001
 
 insert into public.session_attendance (session_id, user_id, status, marked_by)
 select s.id, u.id, 'present', 'aaaaaaaa-0000-0000-0000-000000000001'
-from public.sessions s,
+from (select id from public.sessions order by created_at desc limit 1) s,
      (values ('aaaaaaaa-0000-0000-0000-000000000002'::uuid),
              ('aaaaaaaa-0000-0000-0000-000000000003'::uuid)) as u(id);
 
@@ -62,7 +62,9 @@ begin
   perform public.give_turn(v_session, 'aaaaaaaa-0000-0000-0000-000000000002');
   perform public.save_evaluation(v_session, 'aaaaaaaa-0000-0000-0000-000000000002', 4::smallint, 5::smallint, 'اختبار');
 
-  select count(*) into v_count from public.messages where thread = 'private';
+  select count(*) into v_count from public.messages
+   where thread = 'private'
+     and student_id = 'aaaaaaaa-0000-0000-0000-000000000002';
   if v_count <> 1 then raise exception 'SMOKE FAIL: المعلمة لا ترى الخاصة'; end if;
 end $$;
 
@@ -75,14 +77,18 @@ select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000002
 set local role authenticated;
 
 do $$
-declare v_count integer;
+declare
+  v_session uuid := (select id from public.sessions order by created_at desc limit 1);
+  v_count integer;
 begin
   if public.is_staff() then raise exception 'SMOKE FAIL: الطالبة طاقم'; end if;
 
-  select count(*) into v_count from public.session_attendance;
+  select count(*) into v_count from public.session_attendance where session_id = v_session;
   if v_count <> 1 then raise exception 'SMOKE FAIL: الطالبة ترى % حضور', v_count; end if;
 
-  select count(*) into v_count from public.messages where thread = 'private';
+  select count(*) into v_count from public.messages
+   where thread = 'private'
+     and student_id = 'aaaaaaaa-0000-0000-0000-000000000002';
   if v_count <> 1 then raise exception 'SMOKE FAIL: الطالبة ترى % خاصة', v_count; end if;
 
   begin

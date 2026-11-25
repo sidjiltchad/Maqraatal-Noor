@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.maqraatalnoor.data.remote.AccessTokenPolicy
 import org.maqraatalnoor.data.remote.HalqaRemote
 import org.maqraatalnoor.data.remote.RemoteHalqa
 import org.maqraatalnoor.data.remote.RemoteMember
@@ -44,6 +45,12 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     private val _state = MutableStateFlow<AuthState>(AuthState.Loading)
     val state = _state.asStateFlow()
 
+    private val _joinStatus = MutableStateFlow<String?>(null)
+    val joinStatus = _joinStatus.asStateFlow()
+
+    private val _joinBusy = MutableStateFlow(false)
+    val joinBusy = _joinBusy.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
 
@@ -60,15 +67,26 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun restore(saved: SupabaseApi.AuthSession) {
-        val session = withContext(Dispatchers.IO) {
-            runCatching { SupabaseApi.refresh(saved.refreshToken) }.getOrElse { saved }
+        // لا تُستأنف الجلسة إلا بعد تجديد متحقق: الرجوع إلى التوكن المحفوظ
+        // عند فشل التجديد قد يرسل توكن منتهيا أو مفتاح anon إلى واجهات
+        // محمية، فيظهر 401 مضلل بدل شاشة الدخول.
+        val attempt = withContext(Dispatchers.IO) {
+            runCatching { SupabaseApi.refresh(saved.refreshToken) }
         }
-        if (session.accessToken.isBlank()) {
+        val refreshed = attempt.getOrNull()
+        if (refreshed == null ||
+            !AccessTokenPolicy.isUserToken(refreshed.accessToken, SupabaseApi.anonKeyPublic)
+        ) {
+            // التوكن المرفوض (4xx) أو غير الصالح يُحذف؛ أما انقطاع الشبكة
+            // فيُبقي الجلسة المحفوظة لمحاولة لاحقة دون أي طلب محمي.
+            val rejected = ((attempt.exceptionOrNull() as? SupabaseApi.ApiException)
+                ?.status?.let { it == 400 || it == 401 }) == true
+            if (refreshed != null || rejected) store.clear()
             _state.value = AuthState.SignedOut
             return
         }
-        store.save(session)
-        load(session)
+        store.save(refreshed)
+        load(refreshed)
     }
 
     fun signIn(email: String, password: String) {
@@ -78,12 +96,46 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             try {
                 val session = withContext(Dispatchers.IO) { SupabaseApi.signIn(email, password) }
+                AccessTokenPolicy.requireUserToken(session.accessToken, SupabaseApi.anonKeyPublic)
                 store.save(session)
                 load(session)
             } catch (exc: Exception) {
                 _error.value = friendly(exc)
             } finally {
                 _busy.value = false
+            }
+        }
+    }
+
+    /** إرسال طلب التحاق من شاشة الدخول (قبل إنشاء حساب). */
+    fun submitJoin(name: String, email: String, phone: String, city: String, note: String, level: String) {
+        if (_joinBusy.value) return
+        _joinBusy.value = true
+        _joinStatus.value = null
+        viewModelScope.launch {
+            try {
+                val raw = withContext(Dispatchers.IO) {
+                    SupabaseApi.rpcAnon(
+                        "submit_join_request",
+                        org.json.JSONObject()
+                            .put("p_name", name.trim())
+                            .put("p_email", email.trim())
+                            .put("p_phone", phone.trim())
+                            .put("p_city", city.trim())
+                            .put("p_note", note.trim())
+                            .put("p_level", level),
+                    )
+                }
+                _joinStatus.value = when {
+                    raw.contains("submitted") -> "تم إرسال طلبك، وستصلك دعوة على بياناتك بعد مراجعة المشرفة."
+                    raw.contains("closed") -> "الطلبات مغلقة حاليا، حاولي في وقت لاحق."
+                    raw.contains("duplicate") -> "أرسلتِ طلبا مؤخرا، انتظري رد المشرفة."
+                    else -> "تم استلام الطلب."
+                }
+            } catch (exc: Exception) {
+                _joinStatus.value = "تعذّر إرسال الطلب: ${friendly(exc)}"
+            } finally {
+                _joinBusy.value = false
             }
         }
     }
@@ -104,6 +156,11 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun load(session: SupabaseApi.AuthSession) {
+        if (!AccessTokenPolicy.isUserToken(session.accessToken, SupabaseApi.anonKeyPublic)) {
+            store.clear()
+            _state.value = AuthState.SignedOut
+            return
+        }
         _busy.value = true
         try {
             val remote = HalqaRemote(session)
@@ -114,8 +171,9 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                 return
             }
             val membership = withContext(Dispatchers.IO) { remote.membership() }
-            val halqa = if (membership != null) withContext(Dispatchers.IO) { remote.halqa() } else null
-            val members = if (membership != null) withContext(Dispatchers.IO) { remote.members() } else emptyList()
+            val active = membership?.status == "active"
+            val halqa = if (active) withContext(Dispatchers.IO) { remote.halqa() } else null
+            val members = if (active) withContext(Dispatchers.IO) { remote.members() } else emptyList()
             SessionHolder.update(session, profile)
             _state.value = AuthState.SignedIn(session, profile, membership, halqa, members)
             if (membership == null) {
@@ -161,6 +219,13 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
             message.contains("Email not confirmed", ignoreCase = true) ->
                 "البريد غير مؤكد"
+
+            message.contains("missing email or phone", ignoreCase = true) ||
+                message.contains("missing email", ignoreCase = true) ->
+                "أدخلي البريد الإلكتروني وكلمة المرور"
+
+            message.startsWith("{\"code\"") || message.length > 180 ->
+                "تعذّر إتمام الطلب. تحققي من البيانات ثم حاولي مجددا."
 
             message.contains("الدعوة غير صالحة") -> "كود الدعوة غير صالح أو منتهٍ"
             message.contains("Unable to resolve host", ignoreCase = true) ->

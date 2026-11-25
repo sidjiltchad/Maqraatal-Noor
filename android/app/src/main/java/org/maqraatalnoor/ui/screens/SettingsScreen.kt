@@ -64,6 +64,7 @@ fun SettingsScreen(
     userName: String,
     roleLabel: String,
     onSignOut: () -> Unit,
+    onBack: () -> Unit,
     viewModel: SettingsViewModel = viewModel(),
 ) {
     val context = LocalContext.current
@@ -89,24 +90,24 @@ fun SettingsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("حسابي والإعدادات", "$userName • $roleLabel • الدخول بدعوة فقط")
+        MaqraatalNoorTopBar("حسابي والإعدادات", "$userName • $roleLabel • الدخول بدعوة فقط", onBack)
         Column(modifier = Modifier.padding(16.dp)) {
             SectionTitle("الخط")
             Spacer(Modifier.height(8.dp))
             MaqraatalNoorCard {
                 Text(
-                    "الخط الافتراضي للواجهة هو IBM Plex Sans Arabic. ويمكنك استيراد خط ثمانية يدويا من جهازك، وسيُطبَّق على الواجهة فقط، أما نص المصحف فيبقى دائما بخط النسخ العثماني.",
+                    "الخط الافتراضي للواجهة هو Thmanyah Sans (خط ثمانية)، وتُفك ملفاته المشفّرة في الذاكرة لعرض النص. يمكنك استيراد خط آخر من جهازك للواجهة فقط؛ ويبقى نص المصحف بخطه المستقل.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "خط ثمانية غير مضمَّن في التطبيق، ولا يُنزَّل منه شيء، ولا يُرسَل ملفه إلى أحد. التنزيل من الصفحة الرسمية وحدها (ask.thmanyah.com) ببريدك الإلكتروني، ثم استوردي ملف OTF هنا. ترخيص الخط يمنع إعادة توزيع ملفاته ورفعها أو استضافتها خارج المصدر الرسمي، ولم يُقرأ نص الترخيص الكامل بعد، فلا يُحسم تضمين الخط في التطبيق قبل قراءته.",
+                    "تُحفظ ملفات الخط داخل حزمة التطبيق بصيغة مشفّرة، ولا تُحفظ نسخ مفكوكة منها كملفات على الجهاز. لا يغيّر هذا الاختيار خط نص المصحف.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Muted,
                 )
                 Spacer(Modifier.height(12.dp))
                 FontRow(
-                    name = "IBM Plex Sans Arabic (الافتراضي)",
+                    name = "Thmanyah Sans (الافتراضي)",
                     selected = selectedFontId == FontLoader.DEFAULT_FONT_ID,
                     onSelect = { viewModel.selectFont(FontLoader.DEFAULT_FONT_ID) },
                 )
@@ -152,7 +153,7 @@ fun SettingsScreen(
                 Spacer(Modifier.height(6.dp))
                 Text("المصحف: صفحة عينة واحدة (الفاتحة)؛ المصحف الكامل يحتاج مصدر نص مفتوحا واستيرادا لاحقا.", style = MaterialTheme.typography.bodyMedium, color = Muted)
                 Spacer(Modifier.height(6.dp))
-                Text("المكالمات: حالة محاكاة محلية فقط في هذه النسخة؛ المكالمات الحقيقية تحتاج خادما وإشارات وحسابات.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                Text("مكالمات الحلقة عبر LiveKit؛ الصوت افتراضيًا، ويمكن تشغيل الكاميرا من داخل الغرفة.", style = MaterialTheme.typography.bodyMedium, color = Muted)
             }
             Spacer(Modifier.height(20.dp))
             OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {

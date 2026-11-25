@@ -93,6 +93,8 @@ dependencies {
 
     // HTTP للاتصال بـSupabase (بدون مكتبات ثقيلة)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("io.livekit:livekit-android:2.4.2")
+    implementation("io.livekit:livekit-android-compose-components:2.4.2")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")

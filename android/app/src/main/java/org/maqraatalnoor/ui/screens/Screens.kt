@@ -5,6 +5,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
+import org.maqraatalnoor.ui.theme.Paper
+import org.maqraatalnoor.ui.theme.Ink
+import org.maqraatalnoor.ui.theme.MaqraatalNoorGreen
+import org.maqraatalnoor.ui.theme.HighlightGold
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +27,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -120,109 +131,128 @@ fun SplashScreen(
     }
 }
 
-/** Screen 2 — student home. */
+/** Screen 2 — الرئيسية: بطاقة الحلقة، أرقام الأسبوع، والأقسام. */
 @Composable
 fun HomeScreen(
     role: Role,
     displayName: String,
-    halqaName: String,
-    teachersLabel: String,
-    membersCount: Int,
+    roleLabel: String = "",
     isStaff: Boolean,
-    onNavigateLive: (String) -> Unit,
-    onNavigateClasses: () -> Unit,
+    isSupervisor: Boolean = false,
     onNavigateMushaf: () -> Unit,
-    onNavigatePrivate: (String) -> Unit,
-    onNavigateTeacher: (String) -> Unit,
+    onNavigateChats: () -> Unit = {},
+    onNavigateSettings: () -> Unit = {},
+    onNavigateGroups: () -> Unit = {},
+    onNavigateAdmin: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
     homeRemote: HomeRemoteViewModel = viewModel(),
 ) {
     val live by homeRemote.state.collectAsState()
-    val halqa = viewModel.halqa
-    val weekly = viewModel.weekly
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("السلام عليكم، $displayName", halqaName)
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Next halqa card (deep green, as in the design).
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(DeepGreen)
-                    .padding(16.dp),
-            ) {
-                Column {
-                    Text("الحلقة القادمة", color = GoldLight, style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "الحلقة العامة • مع المعلمات أم سارة وأم مريم",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    Text(
-                        "${halqa.time} • ${halqa.surah}",
-                        color = Cream,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        GoldButton(text = "انضمي عند الموعد", onClick = { onNavigateLive(halqa.classId) })
-                        Spacer(Modifier.weight(1f))
-                        Text("يتبقى 02:14:30", color = GoldLight, style = MaterialTheme.typography.labelLarge)
+            MaqraatalNoorTopBar("السلام عليكم، $displayName", roleLabel)
+
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            SectionTitle("مجموعاتي الدراسية")
+            Spacer(Modifier.height(8.dp))
+            if (live.groups.isEmpty()) {
+                MaqraatalNoorCard(Modifier.fillMaxWidth()) {
+                    Text("لا توجد مجموعات دراسية بعد", color = DeepGreen, style = MaterialTheme.typography.titleMedium)
+                    Text("ستظهر المجموعات هنا بعد إنشائها وإسناد الطالبات إليها.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                }
+            } else {
+                live.groups.take(3).forEach { group ->
+                    MaqraatalNoorCard(Modifier.fillMaxWidth().clickable(onClick = onNavigateGroups)) {
+                        Text(group.name, color = DeepGreen, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(4.dp))
+                        Text("${group.total} طالبة • التأسيس ${group.foundation} • التجويد ${group.tajweed} • الحفظ ${group.hifz}", color = Muted, style = MaterialTheme.typography.bodySmall)
                     }
+                    Spacer(Modifier.height(8.dp))
                 }
             }
-            Spacer(Modifier.height(20.dp))
-            SectionTitle("تقدمك هذا الأسبوع")
+            Spacer(Modifier.height(12.dp))
+            SectionTitle("ملخص هذا الأسبوع")
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatCard(number = live.sessionsThisWeek.toString(), label = "حلقات الأسبوع", modifier = Modifier.weight(1f))
+                StatCard(number = live.sessionsThisWeek.toString(), label = "جلسات", modifier = Modifier.weight(1f))
                 StatCard(number = live.myAttendance.toString(), label = "حضور", modifier = Modifier.weight(1f))
                 StatCard(number = live.averageTajweed, label = "تقييم التجويد", modifier = Modifier.weight(1f))
             }
+
             Spacer(Modifier.height(20.dp))
-            SectionTitle("حلقتي")
+            SectionTitle(when {
+                isSupervisor -> "مساحة الإشراف والإقراء"
+                isStaff -> "مساحة المقرئة"
+                else -> "مساحة الطالبة"
+            })
             Spacer(Modifier.height(8.dp))
-            ClassCard(
-                classGroup = org.maqraatalnoor.data.ClassGroup(
-                    id = "h-main",
-                    name = halqaName,
-                    level = org.maqraatalnoor.data.Level.TAJWEED,
-                    teachers = listOf(
-                        org.maqraatalnoor.data.Teacher("t-main", teachersLabel, "الحلقة"),
-                    ),
-                    days = "الأحد والثلاثاء والخميس",
-                    time = "17:00",
-                    surah = "سورة الكهف",
-                    enrolled = membersCount,
-                    capacity = 30,
-                    progress = viewModel.student.levelProgress,
-                ),
-                actionLabel = "دخول الحلقة",
-                onAction = { onNavigateClasses() },
-            )
-            Spacer(Modifier.height(12.dp))
-            if (role == Role.TEACHER) {
-                GoldButton(
-                    text = "تحكم المعلمة — الحلقة العامة",
-                    onClick = { onNavigateTeacher("c-tajweed") },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(12.dp))
+            if (isSupervisor) {
+                SectionTile("إدارة المقرأة", "القبول والمجموعات ومتابعة الطالبات", "🛡", Modifier.fillMaxWidth(), onNavigateAdmin)
+                Spacer(Modifier.height(8.dp))
+            } else if (isStaff) {
+                Spacer(Modifier.height(8.dp))
+                SectionTile("مجموعاتي", "الطالبات والمستويات المسندة إليك", "👥", Modifier.fillMaxWidth(), onNavigateGroups)
+            } else {
+                SectionTile("مجموعتي ومستواي", "التأسيس، التجويد، الحفظ", "🎓", Modifier.fillMaxWidth(), onNavigateGroups)
             }
-            SectionTitle("وصول سريع")
+
+            SectionTitle("الأقسام")
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickAction("المصحف", Modifier.weight(1f), onNavigateMushaf)
-                QuickAction("واجباتي (2)", Modifier.weight(1f), onNavigateClasses)
-                QuickAction("تسميعي الصوتي", Modifier.weight(1f)) { onNavigatePrivate("s-mariam") }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SectionTile("المحادثات", "المجموعات والخاصة", "💬", Modifier.weight(1f), onNavigateChats)
+                SectionTile("المصحف", "القراءة والتجويد", "📖", Modifier.weight(1f), onNavigateMushaf)
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(10.dp))
+            SectionTile("حسابي", "الإعدادات والملف الشخصي", "⚙", Modifier.fillMaxWidth(), onNavigateSettings)
+            Spacer(Modifier.height(18.dp))
         }
+    }
+}
+
+@Composable
+private fun SectionTile(
+    title: String,
+    subtitle: String,
+    symbol: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Paper)
+            .border(1.dp, CardLine, RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .padding(14.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaqraatalNoorGreen),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = when (symbol) {
+                    "💬" -> Icons.AutoMirrored.Filled.Chat
+                    "📖" -> Icons.AutoMirrored.Filled.MenuBook
+                    "⚙" -> Icons.Filled.Settings
+                    "🛡" -> Icons.Filled.AdminPanelSettings
+                    "👥" -> Icons.Filled.Groups
+                    else -> Icons.Filled.School
+                },
+                contentDescription = title,
+                tint = GoldLight,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, color = Ink, fontWeight = FontWeight.SemiBold)
+        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Muted, maxLines = 1)
     }
 }
 
@@ -267,7 +297,6 @@ fun ClassesScreen(
     membersCount: Int,
     isStaff: Boolean,
     onOpenLive: (String) -> Unit,
-    onOpenPrivate: (String) -> Unit,
     viewModel: ClassesViewModel = viewModel(),
 ) {
     val student = viewModel.student
@@ -429,5 +458,85 @@ private fun LevelStepper(current: Level) {
                 )
             }
         }
+    }
+}
+
+/** بطاقة مجموعة: الاسم + المستويات الثلاثة بعدد الطالبات في كل مستوى. */
+@Composable
+private fun GroupSummaryCard(
+    name: String,
+    foundation: Int,
+    tajweed: Int,
+    hifz: Int,
+    onOpen: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Paper)
+            .border(1.dp, CardLine, RoundedCornerShape(16.dp))
+            .padding(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(DeepGreen),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("م", color = GoldLight, style = MaterialTheme.typography.labelLarge)
+            }
+            Spacer(Modifier.width(10.dp))
+            Text(
+                name,
+                style = MaterialTheme.typography.titleMedium,
+                color = Ink,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                "${foundation + tajweed + hifz} طالبة",
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            LevelPill("التأسيس", foundation, Modifier.weight(1f), onOpen)
+            LevelPill("التجويد", tajweed, Modifier.weight(1f), onOpen)
+            LevelPill("الحفظ", hifz, Modifier.weight(1f), onOpen)
+        }
+    }
+}
+
+@Composable
+private fun LevelPill(
+    label: String,
+    count: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (count > 0) HighlightGold else Color(0x0D000000))
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            count.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            color = if (count > 0) DeepGreen else Muted,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (count > 0) DeepGreen else Muted,
+            maxLines = 1,
+        )
     }
 }
