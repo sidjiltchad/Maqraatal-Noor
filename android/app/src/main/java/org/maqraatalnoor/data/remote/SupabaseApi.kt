@@ -44,7 +44,9 @@ object SupabaseApi {
             if (!response.isSuccessful) {
                 val message = runCatching {
                     val obj = JSONObject(body)
-                    obj.optString("message").ifBlank { obj.optString("error_description") }
+                    obj.optString("message")
+                        .ifBlank { obj.optString("error_description") }
+                        .ifBlank { obj.optString("error") }
                 }.getOrNull().orEmpty().ifBlank { body }.ifBlank { "خطأ غير معروف" }
                 throw ApiException(response.code, message)
             }
@@ -160,5 +162,20 @@ object SupabaseApi {
             .post(payload.toString().toRequestBody(jsonMedia))
             .build()
         return execute(request)
+    }
+
+    /**
+     * Invokes an authenticated Edge Function with the caller's own JWT.
+     * The service-role key is never part of the Android build or this request.
+     */
+    fun invokeFunction(name: String, payload: JSONObject, token: String): JSONObject {
+        val bearer = userBearer(token)
+        val request = Request.Builder()
+            .url("$baseUrl/functions/v1/$name")
+            .addHeader("apikey", anonKey)
+            .addHeader("Authorization", "Bearer $bearer")
+            .post(payload.toString().toRequestBody(jsonMedia))
+            .build()
+        return JSONObject(execute(request))
     }
 }

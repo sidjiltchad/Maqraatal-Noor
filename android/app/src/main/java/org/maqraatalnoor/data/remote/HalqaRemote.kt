@@ -68,6 +68,15 @@ class HalqaRemote(internal val session: SupabaseApi.AuthSession) {
         )
     }
 
+    /**
+     * Authenticated `public.is_owner()` self-check. It takes no target argument
+     * and is the only source of truth for owner routes; the profile role is
+     * never used as a substitute.
+     */
+    suspend fun isOwner(): Boolean = withContext(Dispatchers.IO) {
+        SupabaseApi.rpc("is_owner", JSONObject(), token).trim() == "true"
+    }
+
     suspend fun membership(): RemoteMembership? = withContext(Dispatchers.IO) {
         val rows = SupabaseApi.get(
             "halqa_members?select=user_id,role,level,level_progress,status&user_id=eq.${session.userId}",

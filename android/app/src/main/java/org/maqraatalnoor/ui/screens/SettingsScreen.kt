@@ -90,7 +90,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        MaqraatalNoorTopBar("حسابي والإعدادات", "$userName • $roleLabel • الدخول بدعوة فقط", onBack)
+        MaqraatalNoorTopBar("الإعدادات", "$userName • $roleLabel • الدخول بدعوة فقط", onBack)
         Column(modifier = Modifier.padding(16.dp)) {
             SectionTitle("الخط")
             Spacer(Modifier.height(8.dp))

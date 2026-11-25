@@ -29,8 +29,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.maqraatalnoor.data.Role
+import org.maqraatalnoor.domain.OwnerAccess
 import org.maqraatalnoor.ui.components.MaqraatalNoorPattern
 import org.maqraatalnoor.ui.navigation.Routes
+import org.maqraatalnoor.ui.screens.AccountScreen
 import org.maqraatalnoor.ui.screens.BootScreen
 import org.maqraatalnoor.ui.screens.AdminScreen
 import org.maqraatalnoor.ui.screens.CallScreen
@@ -42,6 +44,7 @@ import org.maqraatalnoor.ui.screens.GroupsScreen
 import org.maqraatalnoor.ui.screens.LiveHalqaScreen
 import org.maqraatalnoor.ui.screens.LoginScreen
 import org.maqraatalnoor.ui.screens.MushafScreen
+import org.maqraatalnoor.ui.screens.OwnerDashboardScreen
 import org.maqraatalnoor.ui.screens.SettingsScreen
 import org.maqraatalnoor.ui.screens.TeacherControlScreen
 import org.maqraatalnoor.ui.theme.DeepGreen
@@ -133,6 +136,29 @@ private fun MainApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val role = if (state.isStaff) Role.TEACHER else Role.STUDENT
+    val roleLabel = when {
+        state.isOwner -> "مالكة المقرأة"
+        state.profile.role == "supervisor" -> "المشرفة العامة"
+        state.profile.role == "teacher" -> "معلمة"
+        else -> "طالبة"
+    }
+    // Owner routes exist only when the authenticated is_owner() check resolved.
+    val canOpenOwnerDashboard = OwnerAccess.canOpenDashboard(state.isOwner, state.profile.role)
+    val membershipStatus = when (state.membership?.status) {
+        "active" -> "نشط"
+        "pending" -> "بانتظار التفعيل"
+        "banned" -> "موقوف"
+        "left" -> "منتهٍ"
+        else -> "غير معروف"
+    }
+    val levelLabel = when (state.membership?.level) {
+        "foundation" -> "التأسيس"
+        "tajweed" -> "التجويد"
+        "hifz" -> "الحفظ"
+        "ijaza" -> "الإجازة"
+        else -> "غير محدد"
+    }
+    val halqaName = state.halqa?.name ?: "الحلقة العامة"
     BackHandler(enabled = currentRoute != Routes.HOME) {
         if (!navController.popBackStack()) navController.navigate(Routes.HOME)
     }
@@ -161,13 +187,17 @@ private fun MainApp(
                 HomeScreen(
                     role = role,
                     onNavigateChats = { navController.navigate(Routes.CHATS) },
-                    onNavigateSettings = { navController.navigate(Routes.SETTINGS) },
+                    onNavigateAccount = { navController.navigate(Routes.ACCOUNT) },
                     onNavigateGroups = { navController.navigate(Routes.GROUPS) },
                     onNavigateAdmin = { navController.navigate(Routes.ADMIN) },
                     displayName = state.profile.name,
-                    roleLabel = when (state.profile.role) { "supervisor" -> "المشرفة العامة"; "teacher" -> "معلمة"; else -> "طالبة" },
+                    roleLabel = roleLabel,
                     isStaff = state.isStaff,
                     isSupervisor = state.profile.role == "supervisor",
+                    isOwner = canOpenOwnerDashboard,
+                    onNavigateOwnerDashboard = {
+                        if (canOpenOwnerDashboard) navController.navigate(Routes.OWNER_DASHBOARD)
+                    },
                     onNavigateMushaf = { navController.navigate(Routes.MUSHAF) },
                 )
             }
@@ -230,14 +260,37 @@ private fun MainApp(
                     onBack = { navController.popBackStack() },
                 )
             }
+            composable(Routes.ACCOUNT) {
+                AccountScreen(
+                    name = state.profile.name,
+                    email = state.session.email,
+                    roleLabel = roleLabel,
+                    isOwner = canOpenOwnerDashboard,
+                    statusLabel = membershipStatus,
+                    halqaName = halqaName,
+                    levelLabel = levelLabel,
+                    onOpenOwnerDashboard = {
+                        if (canOpenOwnerDashboard) navController.navigate(Routes.OWNER_DASHBOARD)
+                    },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onSignOut = onSignOut,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            if (canOpenOwnerDashboard) {
+                composable(Routes.OWNER_DASHBOARD) {
+                    OwnerDashboardScreen(
+                        ownerName = state.profile.name,
+                        ownerEmail = state.session.email,
+                        ownerStatus = membershipStatus,
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+            }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     userName = state.profile.name,
-                    roleLabel = when (state.profile.role) {
-                        "supervisor" -> "المشرفة العامة"
-                        "teacher" -> "معلمة"
-                        else -> "طالبة"
-                    },
+                    roleLabel = roleLabel,
                     onSignOut = onSignOut,
                     onBack = { navController.popBackStack() },
                 )

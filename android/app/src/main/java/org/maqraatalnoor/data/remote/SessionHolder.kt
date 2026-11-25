@@ -19,22 +19,32 @@ object SessionHolder {
         private set
 
     @Volatile
+    var isOwner: Boolean = false
+        private set
+
+    @Volatile
     var userId: String = ""
         private set
 
     val remote: HalqaRemote? get() = session?.let { HalqaRemote(it) }
 
-    fun update(session: SupabaseApi.AuthSession, profile: RemoteProfile) {
+    fun update(
+        session: SupabaseApi.AuthSession,
+        profile: RemoteProfile,
+        isOwner: Boolean = false,
+    ) {
         this.session = session
         this.profile = profile
         this.userId = profile.id
         this.isStaff = profile.role == "teacher" || profile.role == "supervisor"
+        this.isOwner = isOwner
     }
 
     fun clear() {
         session = null
         profile = null
         isStaff = false
+        isOwner = false
         userId = ""
     }
 }

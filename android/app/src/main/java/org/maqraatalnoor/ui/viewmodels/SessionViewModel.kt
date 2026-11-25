@@ -3,6 +3,7 @@ package org.maqraatalnoor.ui.viewmodels
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,33 +11,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.maqraatalnoor.data.remote.AccessTokenPolicy
 import org.maqraatalnoor.data.remote.HalqaRemote
-import org.maqraatalnoor.data.remote.RemoteHalqa
-import org.maqraatalnoor.data.remote.RemoteMember
-import org.maqraatalnoor.data.remote.RemoteMembership
-import org.maqraatalnoor.data.remote.RemoteProfile
 import org.maqraatalnoor.data.remote.SessionHolder
 import org.maqraatalnoor.data.remote.SessionStore
 import org.maqraatalnoor.data.remote.SupabaseApi
-
-/** حالة الدخول: تحميل، غير مسجّلة، أو مسجّلة ببياناتها الحقيقية من Supabase. */
-sealed interface AuthState {
-    data object Loading : AuthState
-    data object SignedOut : AuthState
-
-    data class SignedIn(
-        val session: SupabaseApi.AuthSession,
-        val profile: RemoteProfile,
-        val membership: RemoteMembership?,
-        val halqa: RemoteHalqa?,
-        val members: List<RemoteMember>,
-    ) : AuthState {
-        val isStaff: Boolean get() = profile.role == "teacher" || profile.role == "supervisor"
-        val students: List<RemoteMember> get() = members.filter { it.role == "student" }
-        val teachers: List<RemoteMember> get() = members.filter { it.role != "student" }
-        val teachersLabel: String
-            get() = teachers.joinToString("، ") { it.name }.ifBlank { "لا معلمات بعد" }
-    }
-}
 
 class SessionViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -171,11 +148,22 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                 return
             }
             val membership = withContext(Dispatchers.IO) { remote.membership() }
+            // Fail closed: an unavailable/denied is_owner() call hides owner
+            // routes; the profile role is never used as a fallback.
+            val isOwner = withContext(Dispatchers.IO) {
+                try {
+                    remote.isOwner()
+                } catch (exc: CancellationException) {
+                    throw exc
+                } catch (_: Exception) {
+                    false
+                }
+            }
             val active = membership?.status == "active"
             val halqa = if (active) withContext(Dispatchers.IO) { remote.halqa() } else null
             val members = if (active) withContext(Dispatchers.IO) { remote.members() } else emptyList()
-            SessionHolder.update(session, profile)
-            _state.value = AuthState.SignedIn(session, profile, membership, halqa, members)
+            SessionHolder.update(session, profile, isOwner)
+            _state.value = AuthState.SignedIn(session, profile, membership, halqa, members, isOwner)
             if (membership == null) {
                 _error.value = "حسابك ليس عضوا في الحلقة بعد؛ أدخل كود الدعوة"
             }

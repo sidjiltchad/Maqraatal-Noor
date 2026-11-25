@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -139,11 +140,13 @@ fun HomeScreen(
     roleLabel: String = "",
     isStaff: Boolean,
     isSupervisor: Boolean = false,
+    isOwner: Boolean = false,
     onNavigateMushaf: () -> Unit,
     onNavigateChats: () -> Unit = {},
-    onNavigateSettings: () -> Unit = {},
+    onNavigateAccount: () -> Unit = {},
     onNavigateGroups: () -> Unit = {},
     onNavigateAdmin: () -> Unit = {},
+    onNavigateOwnerDashboard: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
     homeRemote: HomeRemoteViewModel = viewModel(),
 ) {
@@ -185,19 +188,49 @@ fun HomeScreen(
 
             Spacer(Modifier.height(20.dp))
             SectionTitle(when {
+                isOwner -> "مساحة المالكة"
                 isSupervisor -> "مساحة الإشراف والإقراء"
                 isStaff -> "مساحة المقرئة"
                 else -> "مساحة الطالبة"
             })
             Spacer(Modifier.height(8.dp))
-            if (isSupervisor) {
-                SectionTile("إدارة المقرأة", "القبول والمجموعات ومتابعة الطالبات", "🛡", Modifier.fillMaxWidth(), onNavigateAdmin)
+            if (isOwner) {
+                SectionTile(
+                    "لوحة المالكة",
+                    "حساب المشرفة العامة والصلاحيات",
+                    "👑",
+                    Modifier.fillMaxWidth(),
+                    onNavigateOwnerDashboard,
+                )
                 Spacer(Modifier.height(8.dp))
-            } else if (isStaff) {
-                Spacer(Modifier.height(8.dp))
-                SectionTile("مجموعاتي", "الطالبات والمستويات المسندة إليك", "👥", Modifier.fillMaxWidth(), onNavigateGroups)
-            } else {
-                SectionTile("مجموعتي ومستواي", "التأسيس، التجويد، الحفظ", "🎓", Modifier.fillMaxWidth(), onNavigateGroups)
+            }
+            when {
+                isSupervisor -> SectionTile(
+                    "إدارة المقرأة",
+                    "القبول والمجموعات ومتابعة الطالبات",
+                    "🛡",
+                    Modifier.fillMaxWidth(),
+                    onNavigateAdmin,
+                )
+
+                isStaff -> {
+                    Spacer(Modifier.height(8.dp))
+                    SectionTile(
+                        "مجموعاتي",
+                        "الطالبات والمستويات المسندة إليك",
+                        "👥",
+                        Modifier.fillMaxWidth(),
+                        onNavigateGroups,
+                    )
+                }
+
+                else -> SectionTile(
+                    "مجموعتي ومستواي",
+                    "التأسيس، التجويد، الحفظ",
+                    "🎓",
+                    Modifier.fillMaxWidth(),
+                    onNavigateGroups,
+                )
             }
 
             SectionTitle("الأقسام")
@@ -207,7 +240,7 @@ fun HomeScreen(
                 SectionTile("المصحف", "القراءة والتجويد", "📖", Modifier.weight(1f), onNavigateMushaf)
             }
             Spacer(Modifier.height(10.dp))
-            SectionTile("حسابي", "الإعدادات والملف الشخصي", "⚙", Modifier.fillMaxWidth(), onNavigateSettings)
+            SectionTile("حسابي", "الملف الشخصي والإعدادات", "⚙", Modifier.fillMaxWidth(), onNavigateAccount)
             Spacer(Modifier.height(18.dp))
         }
     }
@@ -242,6 +275,7 @@ private fun SectionTile(
                     "📖" -> Icons.AutoMirrored.Filled.MenuBook
                     "⚙" -> Icons.Filled.Settings
                     "🛡" -> Icons.Filled.AdminPanelSettings
+                    "👑" -> Icons.Filled.WorkspacePremium
                     "👥" -> Icons.Filled.Groups
                     else -> Icons.Filled.School
                 },

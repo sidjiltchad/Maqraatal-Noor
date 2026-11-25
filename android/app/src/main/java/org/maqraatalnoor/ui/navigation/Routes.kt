@@ -8,6 +8,8 @@ object Routes {
     const val MUSHAF = "mushaf"
     const val TEACHER = "teacher/{classId}"
     const val SETTINGS = "settings"
+    const val ACCOUNT = "account"
+    const val OWNER_DASHBOARD = "owner-dashboard"
     const val GROUPS = "groups"
     const val ADMIN = "admin"
     const val CHATS = "chats"
