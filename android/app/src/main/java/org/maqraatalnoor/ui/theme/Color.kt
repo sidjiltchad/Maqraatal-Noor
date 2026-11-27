@@ -19,3 +19,9 @@ val CardLine = Color(0xFFEADBC8)
 val Sage = Color(0xFFE9EDE6)
 val LiveRed = Color(0xFFC4302B)
 val HighlightGold = Color(0xFFF7E3C0)
+
+// Shared semantic feedback colors for forms, status labels, and messages.
+val FeedbackSuccess = Color(0xFF2F6B4F)
+val FeedbackSuccessSurface = Color(0xFFEDF5EF)
+val FeedbackError = Color(0xFFA92F2F)
+val FeedbackErrorSurface = Color(0xFFFBEDED)

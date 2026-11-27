@@ -32,7 +32,7 @@ private val MaqraatalNoorColors = lightColorScheme(
     onSurface = Ink,
     surfaceVariant = Cream,
     onSurfaceVariant = Muted,
-    error = LiveRed,
+    error = FeedbackError,
     outline = CardLine,
 )
 

@@ -47,6 +47,8 @@ import org.maqraatalnoor.ui.components.SectionTitle
 import org.maqraatalnoor.ui.theme.CardLine
 import org.maqraatalnoor.ui.theme.DeepGreen
 import org.maqraatalnoor.ui.theme.DeepGreenDark
+import org.maqraatalnoor.ui.theme.FeedbackSuccess
+import org.maqraatalnoor.ui.theme.FeedbackSuccessSurface
 import org.maqraatalnoor.ui.theme.Gold
 import org.maqraatalnoor.ui.theme.GoldLight
 import org.maqraatalnoor.ui.theme.HighlightGold
@@ -55,8 +57,6 @@ import org.maqraatalnoor.ui.theme.LiveRed
 import org.maqraatalnoor.ui.theme.Muted
 import org.maqraatalnoor.ui.theme.Sage
 
-private val SuccessGreen = Color(0xFF2F6B4F)
-private val SuccessSurface = Color(0xFFEDF5EF)
 private val HeroShape = RoundedCornerShape(24.dp)
 
 /**
@@ -261,7 +261,7 @@ private fun HeroStatusPill(statusLabel: String) {
     Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(SuccessSurface)
+            .background(FeedbackSuccessSurface)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -269,12 +269,12 @@ private fun HeroStatusPill(statusLabel: String) {
             modifier = Modifier
                 .size(7.dp)
                 .clip(CircleShape)
-                .background(SuccessGreen),
+                .background(FeedbackSuccess),
         )
         Spacer(Modifier.width(6.dp))
         Text(
             "الحساب $statusLabel",
-            color = SuccessGreen,
+            color = FeedbackSuccess,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             maxLines = 1,

@@ -71,6 +71,10 @@ import org.maqraatalnoor.ui.components.GoldButton
 import org.maqraatalnoor.ui.theme.CardLine
 import org.maqraatalnoor.ui.theme.Cream
 import org.maqraatalnoor.ui.theme.DeepGreen
+import org.maqraatalnoor.ui.theme.FeedbackError
+import org.maqraatalnoor.ui.theme.FeedbackErrorSurface
+import org.maqraatalnoor.ui.theme.FeedbackSuccess
+import org.maqraatalnoor.ui.theme.FeedbackSuccessSurface
 import org.maqraatalnoor.ui.theme.Gold
 import org.maqraatalnoor.ui.theme.GoldDark
 import org.maqraatalnoor.ui.theme.GoldLight
@@ -82,10 +86,6 @@ import org.maqraatalnoor.ui.theme.Paper
 private val CardShape = RoundedCornerShape(20.dp)
 private val FieldShape = RoundedCornerShape(14.dp)
 
-private val BrandError = Color(0xFFA92F2F)
-private val BrandErrorSurface = Color(0xFFFBEDED)
-private val BrandSuccess = Color(0xFF2F6B4F)
-private val BrandSuccessSurface = Color(0xFFEDF5EF)
 
 private val EmailPattern = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
 
@@ -129,17 +129,17 @@ private fun loginFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = GoldDark,
     unfocusedBorderColor = CardLine,
     disabledBorderColor = CardLine,
-    errorBorderColor = BrandError,
+    errorBorderColor = FeedbackError,
     focusedLabelColor = DeepGreen,
     unfocusedLabelColor = Muted,
     disabledLabelColor = Muted,
-    errorLabelColor = BrandError,
+    errorLabelColor = FeedbackError,
     cursorColor = DeepGreen,
-    errorCursorColor = BrandError,
+    errorCursorColor = FeedbackError,
     focusedSupportingTextColor = Muted,
     unfocusedSupportingTextColor = Muted,
     disabledSupportingTextColor = Muted.copy(alpha = 0.7f),
-    errorSupportingTextColor = BrandError,
+    errorSupportingTextColor = FeedbackError,
 )
 
 /**
@@ -343,7 +343,7 @@ fun LoginScreen(
                         supportingText = {
                             Text(
                                 text = emailError ?: "البريد المعتمد في المقرأة.",
-                                color = if (emailError != null) BrandError else Muted,
+                                color = if (emailError != null) FeedbackError else Muted,
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         },
@@ -376,7 +376,7 @@ fun LoginScreen(
                         supportingText = {
                             Text(
                                 text = passwordError ?: "كلمة المرور حساسة لحالة الأحرف.",
-                                color = if (passwordError != null) BrandError else Muted,
+                                color = if (passwordError != null) FeedbackError else Muted,
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         },
@@ -444,7 +444,7 @@ fun LoginScreen(
                         supportingText = {
                             Text(
                                 text = nameError ?: "الاسم كما تحبين أن يظهر.",
-                                color = if (nameError != null) BrandError else Muted,
+                                color = if (nameError != null) FeedbackError else Muted,
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         },
@@ -470,7 +470,7 @@ fun LoginScreen(
                         supportingText = {
                             Text(
                                 text = joinEmailError ?: "بريد للتواصل بعد قبول الطلب.",
-                                color = if (joinEmailError != null) BrandError else Muted,
+                                color = if (joinEmailError != null) FeedbackError else Muted,
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         },
@@ -503,7 +503,7 @@ fun LoginScreen(
                         supportingText = {
                             Text(
                                 text = phoneError ?: "رقم للتواصل عند المراجعة.",
-                                color = if (phoneError != null) BrandError else Muted,
+                                color = if (phoneError != null) FeedbackError else Muted,
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         },
@@ -536,7 +536,7 @@ fun LoginScreen(
                         supportingText = {
                             Text(
                                 text = cityError ?: "مدينتك الحالية.",
-                                color = if (cityError != null) BrandError else Muted,
+                                color = if (cityError != null) FeedbackError else Muted,
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         },
@@ -798,8 +798,8 @@ private fun AuthPrimaryButton(
 private fun AuthMessage(text: String, tone: AuthMessageTone) {
     val shape = RoundedCornerShape(12.dp)
     val (container, borderColor, contentColor) = when (tone) {
-        AuthMessageTone.Error -> Triple(BrandErrorSurface, BrandError.copy(alpha = 0.35f), BrandError)
-        AuthMessageTone.Success -> Triple(BrandSuccessSurface, BrandSuccess.copy(alpha = 0.35f), BrandSuccess)
+        AuthMessageTone.Error -> Triple(FeedbackErrorSurface, FeedbackError.copy(alpha = 0.35f), FeedbackError)
+        AuthMessageTone.Success -> Triple(FeedbackSuccessSurface, FeedbackSuccess.copy(alpha = 0.35f), FeedbackSuccess)
         AuthMessageTone.Info -> Triple(Cream, CardLine, Ink)
     }
     Box(

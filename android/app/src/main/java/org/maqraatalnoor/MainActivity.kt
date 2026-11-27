@@ -2,6 +2,7 @@ package org.maqraatalnoor
 
 import android.graphics.Color as AndroidColor
 import android.os.Bundle
+import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
@@ -16,10 +17,12 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -81,6 +84,16 @@ class MainActivity : ComponentActivity() {
             val error by sessionViewModel.error.collectAsState()
             val joinStatus by sessionViewModel.joinStatus.collectAsState()
             val joinBusy by sessionViewModel.joinBusy.collectAsState()
+            val statusBarAuth = auth
+
+            SideEffect {
+                WindowInsetsControllerCompat(window, window.decorView)
+                    .isAppearanceLightStatusBars = when (statusBarAuth) {
+                    AuthState.Loading, AuthState.SignedOut -> true
+                    is AuthState.SignedIn -> statusBarAuth.membership?.status == null ||
+                        statusBarAuth.membership.status == "active"
+                }
+            }
 
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MaqraatalNoorTheme(uiFamily = uiFontFamily) {
@@ -117,6 +130,7 @@ class MainActivity : ComponentActivity() {
                                 MainApp(
                                     state = state,
                                     onSignOut = sessionViewModel::signOut,
+                                    window = window,
                                 )
                             }
                         }
@@ -131,6 +145,7 @@ class MainActivity : ComponentActivity() {
 private fun MainApp(
     state: AuthState.SignedIn,
     onSignOut: () -> Unit,
+    window: Window,
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -168,6 +183,11 @@ private fun MainApp(
         Routes.MUSHAF -> Paper
         Routes.SPLASH -> DeepGreen
         else -> MaqraatalNoorBackground
+    }
+
+    SideEffect {
+        WindowInsetsControllerCompat(window, window.decorView)
+            .isAppearanceLightStatusBars = currentRoute == Routes.MUSHAF
     }
 
     Scaffold(

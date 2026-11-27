@@ -73,6 +73,10 @@ import org.maqraatalnoor.ui.components.SectionTitle
 import org.maqraatalnoor.ui.theme.CardLine
 import org.maqraatalnoor.ui.theme.DeepGreen
 import org.maqraatalnoor.ui.theme.DeepGreenDark
+import org.maqraatalnoor.ui.theme.FeedbackError
+import org.maqraatalnoor.ui.theme.FeedbackErrorSurface
+import org.maqraatalnoor.ui.theme.FeedbackSuccess
+import org.maqraatalnoor.ui.theme.FeedbackSuccessSurface
 import org.maqraatalnoor.ui.theme.Gold
 import org.maqraatalnoor.ui.theme.GoldLight
 import org.maqraatalnoor.ui.theme.Ink
@@ -82,10 +86,6 @@ import org.maqraatalnoor.ui.theme.Sage
 import org.maqraatalnoor.ui.viewmodels.OwnerDashboardViewModel
 import org.maqraatalnoor.ui.viewmodels.SupervisorCreationState
 
-private val BrandError = Color(0xFFA92F2F)
-private val BrandErrorSurface = Color(0xFFFBEDED)
-private val BrandSuccess = Color(0xFF2F6B4F)
-private val BrandSuccessSurface = Color(0xFFEDF5EF)
 private val CardShape = RoundedCornerShape(20.dp)
 private val FieldShape = RoundedCornerShape(14.dp)
 
@@ -193,7 +193,7 @@ fun OwnerDashboardScreen(
                     supportingText = {
                         Text(
                             text = errors.fullName ?: "الاسم كما سيظهر في ملف المشرفة.",
-                            color = if (errors.fullName != null) BrandError else Muted,
+                            color = if (errors.fullName != null) FeedbackError else Muted,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     },
@@ -221,7 +221,7 @@ fun OwnerDashboardScreen(
                     supportingText = {
                         Text(
                             text = errors.email ?: "ستسجّل الدخول بهذا البريد.",
-                            color = if (errors.email != null) BrandError else Muted,
+                            color = if (errors.email != null) FeedbackError else Muted,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     },
@@ -257,7 +257,7 @@ fun OwnerDashboardScreen(
                         Text(
                             text = errors.password
                                 ?: "8 أحرف على الأقل. لا تُحفظ في التطبيق ولا تُسجَّل.",
-                            color = if (errors.password != null) BrandError else Muted,
+                            color = if (errors.password != null) FeedbackError else Muted,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     },
@@ -419,20 +419,20 @@ private fun OwnerPill(text: String, verified: Boolean) {
     Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(if (verified) Gold else BrandSuccessSurface)
+            .background(if (verified) Gold else FeedbackSuccessSurface)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = if (verified) Icons.Filled.Verified else Icons.Filled.CheckCircle,
             contentDescription = null,
-            tint = if (verified) DeepGreen else BrandSuccess,
+            tint = if (verified) DeepGreen else FeedbackSuccess,
             modifier = Modifier.size(15.dp),
         )
         Spacer(Modifier.width(5.dp))
         Text(
             text,
-            color = if (verified) DeepGreen else BrandSuccess,
+            color = if (verified) DeepGreen else FeedbackSuccess,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -442,9 +442,9 @@ private fun OwnerPill(text: String, verified: Boolean) {
 
 @Composable
 private fun OwnerMessage(text: String, success: Boolean) {
-    val container = if (success) BrandSuccessSurface else BrandErrorSurface
-    val border = if (success) BrandSuccess.copy(alpha = 0.35f) else BrandError.copy(alpha = 0.35f)
-    val content = if (success) BrandSuccess else BrandError
+    val container = if (success) FeedbackSuccessSurface else FeedbackErrorSurface
+    val border = if (success) FeedbackSuccess.copy(alpha = 0.35f) else FeedbackError.copy(alpha = 0.35f)
+    val content = if (success) FeedbackSuccess else FeedbackError
     val shape = RoundedCornerShape(12.dp)
     Box(
         modifier = Modifier
@@ -556,15 +556,15 @@ private fun ownerFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = Gold,
     unfocusedBorderColor = CardLine,
     disabledBorderColor = CardLine,
-    errorBorderColor = BrandError,
+    errorBorderColor = FeedbackError,
     focusedLabelColor = DeepGreen,
     unfocusedLabelColor = Muted,
     disabledLabelColor = Muted,
-    errorLabelColor = BrandError,
+    errorLabelColor = FeedbackError,
     cursorColor = DeepGreen,
-    errorCursorColor = BrandError,
+    errorCursorColor = FeedbackError,
     focusedSupportingTextColor = Muted,
     unfocusedSupportingTextColor = Muted,
     disabledSupportingTextColor = Muted.copy(alpha = 0.7f),
-    errorSupportingTextColor = BrandError,
+    errorSupportingTextColor = FeedbackError,
 )

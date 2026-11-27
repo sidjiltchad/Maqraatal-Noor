@@ -41,11 +41,12 @@ import org.maqraatalnoor.data.remote.HalqaGroup
 import org.maqraatalnoor.ui.components.MaqraatalNoorTopBar
 import org.maqraatalnoor.ui.theme.CardLine
 import org.maqraatalnoor.ui.theme.DeepGreen
+import org.maqraatalnoor.ui.theme.FeedbackError
+import org.maqraatalnoor.ui.theme.FeedbackSuccess
 import org.maqraatalnoor.ui.theme.Gold
 import org.maqraatalnoor.ui.theme.GoldDark
 import org.maqraatalnoor.ui.theme.GoldLight
 import org.maqraatalnoor.ui.theme.Ink
-import org.maqraatalnoor.ui.theme.LiveRed
 import org.maqraatalnoor.ui.theme.MaqraatalNoorGreen
 import org.maqraatalnoor.ui.theme.Muted
 import org.maqraatalnoor.ui.theme.Paper
@@ -132,7 +133,7 @@ fun AdminScreen(
                             Text(
                                 if (item.accepted) "مقبول" else "مرفوض",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (item.accepted) Color(0xFF2E7D32) else LiveRed,
+                                color = if (item.accepted) FeedbackSuccess else FeedbackError,
                             )
                         }
                         Spacer(Modifier.width(10.dp))
@@ -430,7 +431,7 @@ private fun RequestCard(
                     .clickable { onReject() },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("رفض", color = LiveRed, style = MaterialTheme.typography.labelLarge)
+                Text("رفض", color = FeedbackError, style = MaterialTheme.typography.labelLarge)
             }
         }
     }
@@ -477,7 +478,7 @@ private fun StudentCard(
                     .background(if (banned) Color(0x33C4302B) else MaqraatalNoorGreen),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(name.takeLast(1), color = if (banned) LiveRed else GoldLight, style = MaterialTheme.typography.labelLarge)
+                Text(name.takeLast(1), color = if (banned) FeedbackError else GoldLight, style = MaterialTheme.typography.labelLarge)
             }
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -485,7 +486,7 @@ private fun StudentCard(
                 Text(
                     if (banned) "محظورة" else subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (banned) LiveRed else Muted,
+                    color = if (banned) FeedbackError else Muted,
                 )
             }
             MiniButton(if (banned) "رفع الحظر" else "حظر", banned, onBan)
